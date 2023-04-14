@@ -1,0 +1,7 @@
+
+platformio\.pro
+\.pio
+\.vscode
+\.pio/build
+\.pioenvs/
+platformio\.pro\.user
