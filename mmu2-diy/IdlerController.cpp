@@ -246,26 +246,23 @@ void IdlerController::specialunParkIdler() {
 }
 
 // this routine drives the 5 position bearings (aka idler) on the top of the MMU2 carriage
-void IdlerController::idlerSelector(int filament) {
+void IdlerController::select(int filament) {
 	int steps;
 	int newBearingPosition;
 	int newSetting;
-
-
-
-
 
 	// needed to turn the extruder stepper motor back on since it is turned off by parkidler()
 	digitalWrite(extruderEnablePin, ENABLE);
 
 	if ((filament < 0) || (filament > 4)) {
-		Serial.println(F("idlerSelector() ERROR, invalid filament selection"));
-		Serial.print(F("idlerSelector() filament: "));
+		Serial.println(F("idler.select() ERROR, invalid filament selection"));
+		Serial.print(F("idler.select() filament: "));
 		Serial.println(filament);
 		return;
 	}
-	// move the selector back to it's origin state
 
+	
+	// move the selector back to it's origin state
 	newBearingPosition = bearingAbsPos[filament];                         // idler set to 1st position
 	application.filamentSelection = filament;
 	application.currentExtruder = (char)filament;

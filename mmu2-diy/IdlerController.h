@@ -17,7 +17,7 @@ public:
     void parkIdler();
     void quickParkIdler();
     void specialParkIdler();
-    void idlerSelector(int filament);
+    void select(int filament);
     void turnamount(int steps, int dir);
     // Variables
     int status;
