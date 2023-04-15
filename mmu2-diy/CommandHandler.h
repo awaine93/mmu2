@@ -9,6 +9,7 @@ class CommandHandler
 public:
 	CommandHandler();
 	void keyboardCommands();
+	int handlePrinterCommand(String, int);
  	void printCommandList();
 };
 
