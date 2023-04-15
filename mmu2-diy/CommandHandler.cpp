@@ -38,6 +38,9 @@ void CommandHandler::keyboardCommands(){
 		case 'H':
 			printCommandList();
 			break;
+		case 'P':
+			Serial.println(filamentController.isFilamentLoaded());
+			break;
 		case 'Q':
 			Serial.println(F("Processing 'Q' Command : Disable Motors"));
 			application.disableAllMotors();
@@ -165,7 +168,7 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 
 			if ((c2 >= '0') && (c2 <= '4')) {
 				Serial.println(F("L: Moving the bearing idler"));
-				idlerController.idlerSelector((int)c2);   // move the filament selector stepper motor to the right spot
+				idlerController.select(c2);   // move the filament bearing selector stepper motor to the right spot
 				Serial.println(F("L: Moving the color selector"));
 				colorSelector.select(c2);     // move the color Selector stepper Motor to the right spot
 				Serial.println(F("L: Loading the Filament"));
