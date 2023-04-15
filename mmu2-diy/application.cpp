@@ -295,7 +295,7 @@ void processKeyboardInput() {
 			colorSelector.activate();         // turn on the color selector motor
 
 
-		idlerController.idlerSelector((int)receivedChar);   // move the filament selector stepper motor to the right spot
+		idlerController.select(receivedChar);   // move the filament selector stepper motor to the right spot
 		colorSelector.select(receivedChar);     // move the color Selector stepper Motor to the right spot
 
 		break;
@@ -360,7 +360,7 @@ void Application::toolChange( char selection) {
 		if (filamentController.isFilamentLoaded() == 0) {            // no filament loaded
 			Serial.println(F("toolChange: filament not currently loaded, loading ..."));
 
-			idlerController.idlerSelector((int)selection);   // move the filament selector stepper motor to the right spot
+			idlerController.select(selection);   // move the filament selector stepper motor to the right spot
 			colorSelector.select(selection);     // move the color Selector stepper Motor to the right spot
 			// &&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 			filamentController.filamentLoadToMK3();
@@ -383,7 +383,7 @@ void Application::toolChange( char selection) {
 		//************************************************************************************************
 		repeatTCmdFlag = INACTIVE;              // turn off the repeat Commmand Flag (used by 'C' Command)
 		if (filamentController.isFilamentLoaded()) {
-			idlerController.idlerSelector((int)currentExtruder);    // point to the current extruder
+			idlerController.select(currentExtruder);    // point to the current extruder
 			filamentController.unloadFilamentToFinda();          // have to unload the filament first
 		}
 
@@ -401,7 +401,7 @@ void Application::toolChange( char selection) {
 
 		}
 
-		idlerController.idlerSelector((int)selection);
+		idlerController.select(selection);
 		colorSelector.select(selection);
 
 		filamentController.filamentLoadToMK3();                // moves the idler and loads the filament

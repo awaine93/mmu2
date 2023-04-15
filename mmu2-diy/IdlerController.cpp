@@ -209,7 +209,7 @@ void IdlerController::specialParkIdler() {
 //  this routine is called by the 'C' command to re-engage the idler bearing
 //*********************************************************************************************
 void IdlerController::specialunParkIdler() {
-	int newSetting, idlerSteps;
+	int  idlerSteps;
 
 	// re-enage the idler bearing that was only moved 1 position (for quicker re-engagement)
 	//
@@ -220,52 +220,35 @@ void IdlerController::specialunParkIdler() {
 		idlerSteps = IDLERSTEPSIZE / 2;
 	}
 
-#ifdef NOTDEF
-	Serial.print(F("SpecialunParkIdler()   idlersteps: "));
-	Serial.println(idlerSteps);
-#endif
-
-#ifdef DEBUGIDLER
-	Serial.print(F("SpecialunParkIdler()   oldBearingPosition (beginning of routine): "));
-	Serial.println(oldBearingPosition);
-#endif
-
-	newSetting = oldBearingPosition - idlerSteps; // go back IDLERSTEPSIZE units (hopefully re-enages the bearing
 	turnamount(idlerSteps, CW); // restore old position
 
 	// MIGHT BE A BAD IDEA
 	oldBearingPosition = oldBearingPosition - idlerSteps;    // keep track of the idler position
-
-#ifdef DEBUGIDLER
-	Serial.print(F("SpecialunParkIdler()  oldBearingPosition: (end of routine):  "));
-	Serial.println(oldBearingPosition);
-#endif
 
 	status = ACTIVE;                   // mark the idler as active
 
 }
 
 // this routine drives the 5 position bearings (aka idler) on the top of the MMU2 carriage
-void IdlerController::select(int filament) {
-	int steps;
+void IdlerController::select(char filament) {
 	int newBearingPosition;
 	int newSetting;
 
 	// needed to turn the extruder stepper motor back on since it is turned off by parkidler()
 	digitalWrite(extruderEnablePin, ENABLE);
 
-	if ((filament < 0) || (filament > 4)) {
-		Serial.println(F("idler.select() ERROR, invalid filament selection"));
-		Serial.print(F("idler.select() filament: "));
-		Serial.println(filament);
+	if ((filament < '0') || (filament > '4')) {
+		Serial.println(F("idlerController.select():  Error, invalid filament selection"));
 		return;
 	}
 
-	
+
+	// here we have to subtract the ASCII id/number from the char and then cast it to an int to get the correct numeric value
+	int intFilament = (int) filament - 0x30;
 	// move the selector back to it's origin state
-	newBearingPosition = bearingAbsPos[filament];                         // idler set to 1st position
-	application.filamentSelection = filament;
-	application.currentExtruder = (char)filament;
+	newBearingPosition = bearingAbsPos[intFilament];                         // idler set to 1st position
+	application.filamentSelection = intFilament;
+	application.currentExtruder = filament;
 	
 	newSetting = newBearingPosition - oldBearingPosition;
 
@@ -280,13 +263,10 @@ void IdlerController::select(int filament) {
 }
 
 //
-// turn the idler stepper motor
+// Turn the idler stepper motor
 //
 void IdlerController::turnamount(int steps, int dir) {
 	int i;
-	int delayValue;
-
-
 
 	Serial.println(F("moving the idler ..."));
 	Serial.print(F("steps: "));
@@ -300,22 +280,13 @@ void IdlerController::turnamount(int steps, int dir) {
 
 	// digitalWrite(ledPin, HIGH);
 
-	//digitalWrite(idlerDirPin, dir);
-	//delay(1);                               // wait for 1 millsecond
-
 	// these command actually move the IDLER stepper motor
-	//
 	for (i = 0; i < steps * STEPSIZE; i++) {
 		digitalWrite(idlerStepPin, HIGH);
 		delayMicroseconds(PINHIGH);               // delay for 10 useconds
 		digitalWrite(idlerStepPin, LOW);
-		//delayMicroseconds(PINLOW);               // delay for 10 useconds (removed on 10.7.18
-
 		delayMicroseconds(IDLERMOTORDELAY);
 
 	}
-#ifdef NOTDEF
-	Serial.println(F("finished moving the idler ..."));
-#endif
 
-}  // end of turnamount() routine
+} 

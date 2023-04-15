@@ -52,7 +52,6 @@ loop:
 	}else{
 		// here we have to subtract the ASCII id/number from the char and then cast it to an int to get the correct numeric value
 		int intSelection = (int) selection - 0x30;
-		Serial.println(intSelection);
 
 		if (currentPosition <= selectorAbsPos[intSelection]) {
 			csTurnAmount((selectorAbsPos[intSelection] - currentPosition), CW);
