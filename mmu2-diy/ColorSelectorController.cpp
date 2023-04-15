@@ -47,51 +47,70 @@ loop:
 		goto loop;
 	}
 
-
-
-	switch (selection) {
-	case '0':                                       // position '0' is always just a move to the left
+	// position '0' is always just a move to the left
+	if(selection == '0'){
 		// added the '+10' on 10.5.18 (force selector carriage all the way to the left
-		csTurnAmount(currentPosition + 10, CCW);       // the '+10' is an attempt to move the selector ALL the way left (puts the selector into known position)
+		// the '+10' is an attempt to move the selector ALL the way left (puts the selector into known position)
+		csTurnAmount(currentPosition + 10, CCW);      
 		currentPosition = selectorAbsPos[0];
-		break;
-	case '1':
-		if (currentPosition <= selectorAbsPos[1]) {
-			csTurnAmount((selectorAbsPos[1] - currentPosition), CW);
-		} else {
-			csTurnAmount((currentPosition - selectorAbsPos[1]), CCW);
-		}
-		currentPosition = selectorAbsPos[1];
-		break;
-	case '2':
-		if (currentPosition <= selectorAbsPos[2]) {
-			csTurnAmount((selectorAbsPos[2] - currentPosition), CW);
-		} else {
-			csTurnAmount((currentPosition - selectorAbsPos[2]), CCW);
+	}else{
+		int intSelection = (int) selection - 0x30;
+		Serial.println(selection);
+		Serial.println(selection - 0x30);
+		Serial.println(intSelection);
 
-		}
-		currentPosition = selectorAbsPos[2];
-		break;
-	case '3':
-		if (currentPosition <= selectorAbsPos[3]) {
-			csTurnAmount((selectorAbsPos[3] - currentPosition), CW);
+		if (currentPosition <= selectorAbsPos[intSelection]) {
+			csTurnAmount((selectorAbsPos[intSelection] - currentPosition), CW);
 		} else {
-			csTurnAmount((currentPosition - selectorAbsPos[3]), CCW);
-
+			csTurnAmount((currentPosition - selectorAbsPos[intSelection]), CCW);
 		}
-		currentPosition = selectorAbsPos[3];
-		break;
-	case '4':
-		if (currentPosition <= selectorAbsPos[4]) {
-			csTurnAmount((selectorAbsPos[4] - currentPosition), CW);
-		} else {
-			csTurnAmount((currentPosition - selectorAbsPos[4]), CCW);
+		currentPosition = selectorAbsPos[intSelection];
+	}	
 
-		}
-		currentPosition = selectorAbsPos[4];
-		break;
 
-	}
+	// switch (selection) {
+	// case '0':                                      
+	// 	// added the '+10' on 10.5.18 (force selector carriage all the way to the left
+	// 	csTurnAmount(currentPosition + 10, CCW);       // the '+10' is an attempt to move the selector ALL the way left (puts the selector into known position)
+	// 	currentPosition = selectorAbsPos[0];
+	// 	break;
+	// case '1':
+	// 	if (currentPosition <= selectorAbsPos[1]) {
+	// 		csTurnAmount((selectorAbsPos[1] - currentPosition), CW);
+	// 	} else {
+	// 		csTurnAmount((currentPosition - selectorAbsPos[1]), CCW);
+	// 	}
+	// 	currentPosition = selectorAbsPos[1];
+	// 	break;
+	// case '2':
+	// 	if (currentPosition <= selectorAbsPos[2]) {
+	// 		csTurnAmount((selectorAbsPos[2] - currentPosition), CW);
+	// 	} else {
+	// 		csTurnAmount((currentPosition - selectorAbsPos[2]), CCW);
+
+	// 	}
+	// 	currentPosition = selectorAbsPos[2];
+	// 	break;
+	// case '3':
+	// 	if (currentPosition <= selectorAbsPos[3]) {
+	// 		csTurnAmount((selectorAbsPos[3] - currentPosition), CW);
+	// 	} else {
+	// 		csTurnAmount((currentPosition - selectorAbsPos[3]), CCW);
+
+	// 	}
+	// 	currentPosition = selectorAbsPos[3];
+	// 	break;
+	// case '4':
+	// 	if (currentPosition <= selectorAbsPos[4]) {
+	// 		csTurnAmount((selectorAbsPos[4] - currentPosition), CW);
+	// 	} else {
+	// 		csTurnAmount((currentPosition - selectorAbsPos[4]), CCW);
+
+	// 	}
+	// 	currentPosition = selectorAbsPos[4];
+	// 	break;
+
+	// }
 
 }  // end of colorSelector routine()
 
