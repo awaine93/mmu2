@@ -45,9 +45,8 @@ void FilamentController::filamentLoadWithBondTechGear() {
 		return;
 	}
 
-	findaStatus = digitalRead(findaPin);
 
-	if (findaStatus == 1) {
+	if (findaStatus == isFilamentLoaded()) {
 		Serial.println(F("filamentLoadWithBondTechGear()  Error, filament sensor thinks there is no filament"));
 		return;
 	}
@@ -302,8 +301,10 @@ int FilamentController::isFilamentLoaded() {
 	// therefore digitalRead will return a 0 when filiment is present 
 	// and will return 1 when there is no filiment detected
 	if(digitalRead(findaPin) == 1){
-		findaStatus = 0;
+		// no filament 
+		findaStatus = 0; 
 	}else{
+		// filament found
 		findaStatus = 1;
 	
 	}
@@ -573,7 +574,7 @@ void FilamentController::loadFilamentToFinda() {
 loop:
 	currentTime = millis();
 	if ((currentTime - startTime) > 10000) { // 10 seconds worth of trying to unload the filament
-		("UNLOAD FILAMENT ERROR:   timeout error, filament is not unloading past the FINDA sensor");
+		Serial.print("UNLOAD FILAMENT ERROR:   timeout error, filament is not unloading past the FINDA sensor");
 		startTime = millis();   // reset the start time clock
 	}
 	// changed this on 10.12.18 to step 1 mm instead of a single step at a time
@@ -581,27 +582,16 @@ loop:
 	// feedFilament(1);        // 1 step and then check the pinda status
 	feedFilament(STEPSPERMM);  // go 144 steps (1 mm) and then check the finda status
 
-	findaStatus = isFilamentLoaded();
-	if (findaStatus == 1)              // keep feeding the filament until the pinda sensor triggers
+	
+	if (isFilamentLoaded() == 0)              // keep feeding the filament until the pinda sensor triggers
 		goto loop;
 
-#ifdef NOTDEF
-	Serial.println(F("Pinda Sensor Triggered during Filament Load"));
-#endif
 	//
 	// for a filament load ... need to get the filament out of the selector head !!!
 	//
 	digitalWrite(extruderDirPin, CW);   // back the filament away from the selector
 
-#ifdef NOTDEF
-	steps = 200 * STEPSIZE + 50;
-	feedFilament(steps);
-#endif
-
 	feedFilament(STEPSPERMM * 23);      // after hitting the FINDA sensor, back away by 23 mm
-#ifdef NOTDEF
-	Serial.println(F("Loading Filament Complete ..."));
-#endif
 
 	// digitalWrite(ledPin, LOW);     // turn off LED
 }
