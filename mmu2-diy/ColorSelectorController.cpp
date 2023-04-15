@@ -30,14 +30,10 @@ void ColorSelectorController::select(char selection) {
 
 	int findaStatus;
 
-	// this error check was added on 10.4.18
-
 	if ((selection < '0') || (selection > '4')) {
 		Serial.println(F("select():  Error, invalid filament selection"));
 		return;
 	}
-
-	// Serial.println(F("Entering select() routine"));
 
 loop:
 	findaStatus = filamentController.isFilamentLoaded();    // check the pinda status ( DO NOT MOVE THE COLOR SELECTOR if filament is present)
@@ -54,9 +50,8 @@ loop:
 		csTurnAmount(currentPosition + 10, CCW);      
 		currentPosition = selectorAbsPos[0];
 	}else{
+		// here we have to subtract the ASCII id/number from the char and then cast it to an int to get the correct numeric value
 		int intSelection = (int) selection - 0x30;
-		Serial.println(selection);
-		Serial.println(selection - 0x30);
 		Serial.println(intSelection);
 
 		if (currentPosition <= selectorAbsPos[intSelection]) {
@@ -66,53 +61,7 @@ loop:
 		}
 		currentPosition = selectorAbsPos[intSelection];
 	}	
-
-
-	// switch (selection) {
-	// case '0':                                      
-	// 	// added the '+10' on 10.5.18 (force selector carriage all the way to the left
-	// 	csTurnAmount(currentPosition + 10, CCW);       // the '+10' is an attempt to move the selector ALL the way left (puts the selector into known position)
-	// 	currentPosition = selectorAbsPos[0];
-	// 	break;
-	// case '1':
-	// 	if (currentPosition <= selectorAbsPos[1]) {
-	// 		csTurnAmount((selectorAbsPos[1] - currentPosition), CW);
-	// 	} else {
-	// 		csTurnAmount((currentPosition - selectorAbsPos[1]), CCW);
-	// 	}
-	// 	currentPosition = selectorAbsPos[1];
-	// 	break;
-	// case '2':
-	// 	if (currentPosition <= selectorAbsPos[2]) {
-	// 		csTurnAmount((selectorAbsPos[2] - currentPosition), CW);
-	// 	} else {
-	// 		csTurnAmount((currentPosition - selectorAbsPos[2]), CCW);
-
-	// 	}
-	// 	currentPosition = selectorAbsPos[2];
-	// 	break;
-	// case '3':
-	// 	if (currentPosition <= selectorAbsPos[3]) {
-	// 		csTurnAmount((selectorAbsPos[3] - currentPosition), CW);
-	// 	} else {
-	// 		csTurnAmount((currentPosition - selectorAbsPos[3]), CCW);
-
-	// 	}
-	// 	currentPosition = selectorAbsPos[3];
-	// 	break;
-	// case '4':
-	// 	if (currentPosition <= selectorAbsPos[4]) {
-	// 		csTurnAmount((selectorAbsPos[4] - currentPosition), CW);
-	// 	} else {
-	// 		csTurnAmount((currentPosition - selectorAbsPos[4]), CCW);
-
-	// 	}
-	// 	currentPosition = selectorAbsPos[4];
-	// 	break;
-
-	// }
-
-}  // end of colorSelector routine()
+}  
 
 
 // this is the selector motor with the lead screw (final stage of the MMU2 unit)
