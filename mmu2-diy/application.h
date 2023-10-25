@@ -16,7 +16,7 @@ public:
 	void toolChange(char);
 	void checkSerialInterface();
 
-	// Variables 
+	// Variables
 	int repeatTCmdFlag;
 	int filamentSelection;
 	char currentExtruder; 

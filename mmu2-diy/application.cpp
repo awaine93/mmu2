@@ -68,8 +68,6 @@ boolean newData = false;
 
 // Global variables
 int command = 0;
-float bearingAbsPos[5] = {0, IDLERSTEPSIZE, IDLERSTEPSIZE * 2, IDLERSTEPSIZE * 3, IDLERSTEPSIZE * 4};
-
 
 //SoftwareSerial Serial1(10,11); // RX, TX (communicates with the MK3 controller board
 

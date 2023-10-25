@@ -65,10 +65,9 @@ extern int command;
 #define INSTRUCTION_DELAY 25          // delay (in microseconds) of the loop
 
 
-
 #define IDLERSTEPSIZE 25 //original:23    // steps to each roller bearing  
 // float bearingAbsPos[5] = {1, 24, 48, 72, 96}; // absolute position of roller bearing stepper motor
-extern float bearingAbsPos[5];
+
 
 #define CSSTEPS 355 // original: 357                                            
 
@@ -92,7 +91,7 @@ extern float bearingAbsPos[5];
 #define idlerStepPin	A6
 #define idlerEnablePin	A2
 
-// Z - axis
+// Z - axi.s
 #define extruderDirPin		48 //  pin 48 for extruder motor direction pin
 #define extruderStepPin		46 //  pin 48 for extruder motor stepper motor pin
 #define extruderEnablePin	A8 //  pin A8 for extruder motor rst/sleep motor pin
