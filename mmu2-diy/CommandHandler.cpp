@@ -168,7 +168,7 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 
 			if ((c2 >= '0') && (c2 <= '4')) {
 				Serial.println(F("L: Moving the bearing idler"));
-				idlerController.select(c2);   // move the filament bearing selector stepper motor to the right spot
+				idlerController.idlerSelector(c2);   // move the filament bearing selector stepper motor to the right spot
 				Serial.println(F("L: Moving the color selector"));
 				colorSelector.select(c2);     // move the color Selector stepper Motor to the right spot
 				Serial.println(F("L: Loading the Filament"));

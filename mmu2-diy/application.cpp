@@ -78,7 +78,6 @@ unsigned long time0, time1, time2, time3, time4, time5;
 
 void Application::setup() {
 	// static int findaStatus;
-
 	int waitCount;
 
 	Serial.begin(500000);  // startup the local serial interface (changed to 2 Mbaud on 10.7.18
@@ -97,13 +96,14 @@ void Application::setup() {
 	delay(100);
 
 
-	Serial.println(F("Sending START command to mk3 controller board"));
-	// THIS NEXT COMMAND IS CRITICAL ... IT TELLS THE MK3 controller that an MMU is present
-	Serial1.print(F("start\n")); // attempt to tell the mk3 that the mmu is present
+
 
 	//  check the serial interface to see if it is active
 	waitCount = 0;
 	while (!Serial1.available()) {
+		Serial.println(F("Sending START command to mk3 controller board"));
+		// THIS NEXT COMMAND IS CRITICAL ... IT TELLS THE MK3 controller that an MMU is present
+		Serial1.print(F("start\n")); // attempt to tell the mk3 that the mmu is present
 		Serial.println(F("Waiting for message from mk3"));
 		delay(1000);
 		++waitCount;
@@ -113,6 +113,7 @@ void Application::setup() {
 		}
 	}
 	Serial.println(F("inbound message from mk3"));
+  
 
 continue_processing:
 
