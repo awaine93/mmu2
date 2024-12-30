@@ -36,9 +36,12 @@ void CommandHandler::keyboardCommands(){
 			filamentController.filamentLoadWithBondTechGear();
 			break;
 		case 'H':
-			printCommandList();
+			Serial.println(F("Processing 'H' Command : print commands list"));
+			printKeyboardCommandList();
+			printPrinterCommandList();
 			break;
 		case 'P':
+			Serial.println(F("Processing 'P' Command : Filament Status"));
 			Serial.println(filamentController.isFilamentLoaded());
 			break;
 		case 'Q':
@@ -71,7 +74,7 @@ void CommandHandler::keyboardCommands(){
 			Serial.println(F("!! COMMAND NOT FOUND !!"));
 			Serial.println();
 			Serial.println();
-			printCommandList();
+			printKeyboardCommandList();
 			
 			break;
 		}
@@ -115,7 +118,7 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 			break;
 		case 'C':
 			Serial.println(F("C: Moving filament to extruder"));
-			// move filament from selector ALL the way to printhead
+			// move filament from selector ALL the way to print head
 			
 			// filamentLoadToMK3();
 			filamentController.filamentLoadWithBondTechGear();
@@ -243,12 +246,31 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 
 // Lists all available keyboard commands 
 // TODO :: Keep this updated with new commands 
-void CommandHandler::printCommandList(){
+void CommandHandler::printKeyboardCommandList(){
+	Serial.println(F("Serial Commands:"));
 	Serial.println(F("C    : "));
 	Serial.println(F("H    : Help / CMD menu : Dsplays this command list"));
+	Serial.println(F("P    : Filament Status : Returns 1 if filament is loaded and 0 if not loaded"));
 	Serial.println(F("Q    : Disable Motors  : Disables all Setpper motors"));
-	Serial.println(F("T<x> : Change tool     : Changes the colour selector to the given filament and then loads it  into the MMU"));
+	Serial.println(F("T<x> : Change tool     : Changes the colour selector to the given filament and then loads it into the MMU"));
 	Serial.println(F("U    : Unload filament : Unloads the filament that is currently loaded"));
 	Serial.println(F("X    : Reset 		     : Resets the MMU unit"));
+	Serial.println();
+	Serial.println();
 }
 
+void CommandHandler::printPrinterCommandList(){
+	Serial.println(F("Printer Commands:"));
+    Serial.println(F("X    : Reset          : Resets the MMU"));
+    Serial.println(F("T<x> : Tool Change     : Changes the tool to the specified filament number (0-4)"));
+    Serial.println(F("C    : Load Filament   : Loads filament to the extruder using BondTech gear"));
+    Serial.println(F("U<x> : Unload Filament : Unloads the specified filament number (0-4) to the FINDA sensor"));
+    Serial.println(F("L<x> : Load Filament   : Loads the specified filament number (0-4) into the MMU"));
+    Serial.println(F("S0   : Acknowledge     : Sends an OK response to the MK3 controller"));
+    Serial.println(F("S1   : Firmware Info   : Requests firmware version"));
+    Serial.println(F("S2   : Build Number    : Requests build number and initial communication status"));
+    Serial.println(F("P    : FINDA Status    : Checks if filament is loaded (returns 1 for loaded, 0 for not loaded)"));
+    Serial.println(F("F<x> : Filament Type   : Acknowledges selected filament type (future use)"));
+	Serial.println();
+	Serial.println();
+}

@@ -95,14 +95,11 @@ void Application::setup() {
 	//Serial.println(F("started the mk3 serial interface"));
 	delay(100);
 
-
-
-
 	//  check the serial interface to see if it is active
 	waitCount = 0;
 	while (!Serial1.available()) {
 		Serial.println(F("Sending START command to mk3 controller board"));
-		// THIS NEXT COMMAND IS CRITICAL ... IT TELLS THE MK3 controller that an MMU is present
+		// THIS NEXT COMMAND IS CRITICAL ... IT TELLS THE MK3 controller that an MMU is presenta
 		Serial1.print(F("start\n")); // attempt to tell the mk3 that the mmu is present
 		Serial.println(F("Waiting for message from mk3"));
 		delay(1000);
