@@ -9,14 +9,14 @@ class ColorSelectorController
 public:
 	ColorSelectorController();
     void activate();
-    void select(char selection);
+    void select(int selection);
     void csTurnAmount(int steps, int direction);
     void initColorSelector();
     void deActivate();
     void syncColorSelector();
 
     // Variables 
-    int status;
+    int csStatus;
     int currentPosition;
 };
 

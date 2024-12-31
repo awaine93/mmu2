@@ -8,7 +8,6 @@
 #include "ColorSelectorController.h"
 #include "IdlerController.h"
 
-//Application application;
 IdlerController idlerController ;
 ColorSelectorController colorSelector;
 
@@ -18,10 +17,26 @@ int f0Max, f1Max, f2Max, f3Max, f4Max = 0;
 int f0Avg, f1Avg, f2Avg, f3Avg, f4Avg;
 long f0Distance, f1Distance, f2Distance, f3Distance, f4Distance = 0;
 int f0ToolChange, f1ToolChange, f2ToolChange, f3ToolChange, f4ToolChange = 0;
+int filStatus = INACTIVE;
+
+
 
 
 FilamentController::FilamentController (){
     // Do Nothing 
+}
+
+void FilamentController::activate() {
+	digitalWrite(extruderEnablePin, ENABLE);
+	delay(1);
+	filStatus = ACTIVE;
+}
+
+void FilamentController::deActivate() {
+
+	digitalWrite(extruderEnablePin, DISABLE);    // turn off the color selector stepper motor  (nice to do, cuts down on CURRENT utilization)
+	delay(1);
+	filStatus = INACTIVE;
 }
 
 // part of the 'C' command,  does the last little bit to load into the past the extruder gear
@@ -51,9 +66,9 @@ void FilamentController::filamentLoadWithBondTechGear() {
 		return;
 	}
 
-	if ((application.currentExtruder < '0')  || (application.currentExtruder > '4')) {
+	if ((application.currentExtruder < 0)  || (application.currentExtruder > 4)) {
 		Serial.println(F("filamentLoadWithBondTechGear(): fixing current extruder variable"));
-		application.currentExtruder = '0';
+		application.currentExtruder = 0;
 	}
 
 
@@ -284,7 +299,8 @@ loop:
 	//
 	// for a filament unload ... need to get the filament out of the selector head !!!
 	//
-	digitalWrite(extruderDirPin, CW);   // back the filament away from the selector
+	Serial.println(F("unloadFilamenttoFinda(): filament unloaded past finda sensor"));
+	//digitalWrite(extruderDirPin, CW);   // back the filament away from the selector
     feedFilament(STEPSPERMM * 23);     // back the filament away from the selector by 23mm
 
 #ifdef NOTDEF
@@ -394,19 +410,18 @@ void FilamentController::filamentLoadToMK3() {
 	int startTime, currentTime;
 
 
-	if ((application.currentExtruder < '0')  || (application.currentExtruder > '4')) {
+	if ((application.currentExtruder < 0)  || (application.currentExtruder > 4)) {
 		Serial.println(F("filamentLoadToMK3(): fixing current extruder variable"));
-		application.currentExtruder = '0';
+		application.currentExtruder = 0;
 	}
 #ifdef DEBUG
 	Serial.println(F("Attempting to move Filament to Print Head Extruder Bondtech Gears"));
 	//idlerController.nParkIdler();
 	Serial.print(F("filamentLoadToMK3():  application.currentExtruder: "));
 	Serial.println(application.currentExtruder);
-#endif
+#endif 
 
-	// idlerSelector(application.currentExtruder);        // active the idler before the filament load
-
+	idlerController.select(application.currentExtruder); // active the idler before the filament load
 	colorSelector.deActivate();
 
 	digitalWrite(extruderEnablePin, ENABLE); // turn on the extruder stepper motor (10.14.18)
@@ -551,7 +566,7 @@ loop1:
 	//#############################################################################################################################
 	//# NEWEXPERIMENT:  removed the parkIdler() command on 10.5.18 to improve timing between 'T' command followng by 'C' command
 	//#############################################################################################################################
-	// parkIdler();              // park the IDLER (bearing) motor
+	 idlerController.parkIdler();              // park the IDLER (bearing) motor
 
 	//delay(200);             // removed on 10.5.18
 	//Serial1.print(F("ok\n"));    // send back acknowledge to the mk3 controller (removed on 10.5.18)
@@ -565,7 +580,7 @@ void FilamentController::loadFilamentToFinda() {
 	unsigned int steps;
 	unsigned long startTime, currentTime;
 
-	digitalWrite(extruderEnablePin, ENABLE);  // added on 10.14.18
+	digitalWrite(extruderEnablePin, ENABLE);
 	digitalWrite(extruderDirPin, CCW);  // set the direction of the MMU2 extruder motor
 	delay(1);
 

@@ -6,17 +6,14 @@
 #include "config.h"
 #include "IdlerController.h"
 
-//Application application;
-
 int oldBearingPosition = 0;      // this tracks the roller bearing position (top motor on the MMU)
-int status = INACTIVE;
+int idlerStatus = INACTIVE;
 
 IdlerController::IdlerController(){
     // Do Nothing
 }
 
-// perform this function only at power up/reset
-//
+// Perform this function only at power up/reset
 void IdlerController::initIdlerPosition() {
 	Serial.println(F("initIdlerPosition(): resetting the Idler Roller Bearing position"));
 
@@ -28,7 +25,7 @@ void IdlerController::initIdlerPosition() {
 	digitalWrite(idlerEnablePin, DISABLE);   // turn off the idler roller bearing motor
 
 	application.filamentSelection = 0;       // keep track of filament selection (0,1,2,3,4))
-	application.currentExtruder = '0';
+	application.currentExtruder = 0;
 }
 
 //*********************************************************************************************
@@ -145,8 +142,9 @@ void IdlerController::quickParkIdler() {
 
 	status = QUICKPARKED; // use this new state to show the idler is pending the 'C0' command
 
-	// DO NOT TURN OFF THE IDLER ... needs to be held in position
-	//digitalWrite(idlerEnablePin, DISABLE);    // turn off the roller bearing stepper motor  (nice to do, cuts down on CURRENT utilization)
+	// DO NOT TURN OFF THE IDLER ... needs to be held in position ---- why ? 
+	digitalWrite(idlerEnablePin, DISABLE);    // turn off the roller bearing stepper motor  (nice to do, cuts down on CURRENT utilization)
+	digitalWrite(extruderEnablePin, DISABLE); // turn off the extruder stepper motor as well
 
 }
 
@@ -246,21 +244,14 @@ void IdlerController::specialunParkIdler() {
 }
 
 // this routine drives the 5 position bearings (aka idler) on the top of the MMU2 carriage
-void IdlerController::idlerSelector(int filament) {
+void IdlerController::select(int filament) {
 	int steps;
 	int newBearingPosition;
 	int newSetting;
 
-
-
-
-
-	// needed to turn the extruder stepper motor back on since it is turned off by parkidler()
-	digitalWrite(extruderEnablePin, ENABLE);
-
 	if ((filament < 0) || (filament > 4)) {
-		Serial.println(F("idlerSelector() ERROR, invalid filament selection"));
-		Serial.print(F("idlerSelector() filament: "));
+		Serial.println(F("idlerController.select() ERROR, invalid filament selection"));
+		Serial.print(F("idlerController.select() filament: "));
 		Serial.println(filament);
 		return;
 	}
@@ -268,7 +259,7 @@ void IdlerController::idlerSelector(int filament) {
 
 	newBearingPosition = bearingAbsPos[filament];                         // idler set to 1st position
 	application.filamentSelection = filament;
-	application.currentExtruder = (char)filament;
+	application.currentExtruder = filament;
 	
 	newSetting = newBearingPosition - oldBearingPosition;
 
@@ -317,8 +308,4 @@ void IdlerController::turnamount(int steps, int dir) {
 		delayMicroseconds(IDLERMOTORDELAY);
 
 	}
-#ifdef NOTDEF
-	Serial.println(F("finished moving the idler ..."));
-#endif
-
 }  // end of turnamount() routine

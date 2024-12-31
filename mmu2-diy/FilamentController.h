@@ -16,7 +16,12 @@ public:
     void feedFilament(unsigned int);
     void loadFilament(int);
     void printFilamentStats();
+    void activate();
+    void deActivate();
 	
+    // Variables
+    int filStatus;
+
 };
 
 #endif // FILAMENTCONTROLLER_H

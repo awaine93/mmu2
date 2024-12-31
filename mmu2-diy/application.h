@@ -13,13 +13,13 @@ public:
 	void loop();
 	void disableAllMotors();
 	void fixTheProblem(String);
-	void toolChange(char);
+	void toolChange(int);
 	void checkSerialInterface();
 
 	// Variables 
 	int repeatTCmdFlag;
 	int filamentSelection;
-	char currentExtruder; 
+	int currentExtruder; 
 	unsigned long time0, time1, time2, time3, time4, time5;
 
 };

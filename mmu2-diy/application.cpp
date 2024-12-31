@@ -56,7 +56,7 @@ int repeatTCmdFlag = INACTIVE;    // used by the 'C' command processor to avoid 
 
 int filamentSelection = 0;       // keep track of filament selection (0,1,2,3,4))
 int dummy[100];
-char currentExtruder = '0';
+int currentExtruder = 0;
 
 int firstTimeFlag = 0;
 int earlyCommands = 0;           // forcing communications with the mk3 at startup
@@ -289,11 +289,10 @@ void processKeyboardInput() {
 			idlerController.status = ACTIVE;
 		}
 			
-		if (colorSelector.status == INACTIVE)
+		if (colorSelector.csStatus == INACTIVE)
 			colorSelector.activate();         // turn on the color selector motor
 
-
-		idlerController.idlerSelector((int)receivedChar);   // move the filament selector stepper motor to the right spot
+		idlerController.select((int)receivedChar);   // move the filament selector stepper motor to the right spot
 		colorSelector.select(receivedChar);     // move the color Selector stepper Motor to the right spot
 
 		break;
@@ -331,8 +330,9 @@ void processKeyboardInput() {
 //
 // (T) Tool Change Command - this command is the core command used my the mk3 to drive the mmu2 filament selection
 //
-void Application::toolChange( char selection) {
-	int newExtruder;
+void Application::toolChange(int selection) {
+	Serial.print(F("Application.toolChange(): filament selected: "));
+	Serial.println(selection);
 
 	++toolChangeCount;                             // count the number of tool changes
 	++trackToolChanges;
@@ -341,34 +341,32 @@ void Application::toolChange( char selection) {
 	// * 10.10.18 added an automatic reset of the tracktoolchange counter since going to
 	//            filament position '0' move the color selection ALL the way to the left
 	//*********************************************************************************
-	if (selection == '0')  {
+	if (selection == 0)  {
 		trackToolChanges = 0;
 	}
 
-	Serial.print(F("Tool Change Count: "));
+	Serial.print(F("Application.toolChange(): Tool Change Count: "));
 	Serial.println(toolChangeCount);
-
-	newExtruder = selection - 0x30;                // convert ASCII to a number (0-4)
 
 	//***********************************************************************************************
 	// code snippet added on 10.8.18 to help the 'C' command processing (happens after 'T' command
 	//***********************************************************************************************
-	if (newExtruder == filamentSelection) {  // already at the correct filament selection
+	if (selection == filamentSelection) {  // already at the correct filament selection
 		
 		if (filamentController.isFilamentLoaded() == 0) {            // no filament loaded
-			Serial.println(F("toolChange: filament not currently loaded, loading ..."));
+			Serial.println(F("Application.toolChange(): filament not currently loaded, loading ..."));
 
-			idlerController.idlerSelector((int)selection);   // move the filament selector stepper motor to the right spot
+			idlerController.select(selection);   // move the filament selector stepper motor to the right spot
 			colorSelector.select(selection);     // move the color Selector stepper Motor to the right spot
-			// &&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 			filamentController.filamentLoadToMK3();
+			colorSelector.deActivate();
 			idlerController.quickParkIdler();           // command moved here on 10.13.18
 			//****************************************************************************************
 			//*  added on 10.8.18 to help the 'C' command
 			//***************************************************************************************
 			repeatTCmdFlag = INACTIVE;   // used to help the 'C' command
 		} else {
-			Serial.println(F("toolChange:  filament already loaded to mk3 extruder"));
+			Serial.println(F("Application.toolChange():  filament already loaded to mk3 extruder"));
 			//*********************************************************************************************
 			//* added on 10.8.18 to help the 'C' Command
 			//*********************************************************************************************
@@ -381,39 +379,34 @@ void Application::toolChange( char selection) {
 		//************************************************************************************************
 		repeatTCmdFlag = INACTIVE;              // turn off the repeat Commmand Flag (used by 'C' Command)
 		if (filamentController.isFilamentLoaded()) {
-			idlerController.idlerSelector((int)currentExtruder);    // point to the current extruder
-			filamentController.unloadFilamentToFinda();          // have to unload the filament first
+			Serial.println(F("Application.toolChange(): filament currently loaded in selector, unloading ..."));
+			idlerController.select(currentExtruder);   	 // point to the current extruder
+			filamentController.unloadFilamentToFinda();  // have to unload the filament first
 		}
 
 
 		if (trackToolChanges > TOOLSYNC) {             // reset the color selector stepper motor (gets out of alignment)
-			Serial.println(F("Synchronizing the Filament Selector Head"));
+			Serial.println(F("Application.toolChange(): syncing the Filament Selector Head"));
 			colorSelector.syncColorSelector();
 
 			colorSelector.activate();                  // turn the color selector motor back on
-			colorSelector.currentPosition = 0;                   // reset the color selector
-
-			// colorSelector('0');                       // move selector head to position 0
-
+			colorSelector.currentPosition = 0;         // reset the color selector position
+			// colorSelector('0');                    	// move selector head to position 0
 			trackToolChanges = 0;
 
 		}
 
-		idlerController.idlerSelector((int)selection);
+		idlerController.select(selection);
 		colorSelector.select(selection);
 
 		filamentController.filamentLoadToMK3();                // moves the idler and loads the filament
 
-		filamentSelection = newExtruder;
+		filamentSelection = selection;
 		currentExtruder = selection;
 		//quickParkIdler();                 // command moved here on 10.13.18
 		idlerController.parkIdler();
+		colorSelector.deActivate();
 	}
-
-	
-	                            // move the idler away
-
-
 }  // end of ToolChange processing
 
 

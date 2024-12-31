@@ -26,11 +26,18 @@ void ColorSelectorController::activate() {
 	csStatus = ACTIVE;
 }
 
-void ColorSelectorController::select(char selection) {
+void ColorSelectorController::deActivate() {
+
+	digitalWrite(colorSelectorEnablePin, DISABLE);    // turn off the color selector stepper motor  (nice to do, cuts down on CURRENT utilization)
+	delay(1);
+	csStatus = INACTIVE;
+}
+
+void ColorSelectorController::select(int selection) {
 
 	int findaStatus;
 
-	if ((selection < '0') || (selection > '4')) {
+	if ((selection < 0) || (selection > 4)) {
 		Serial.println(F("select():  Error, invalid filament selection"));
 		return;
 	}
@@ -44,22 +51,21 @@ loop:
 	}
 
 	// position '0' is always just a move to the left
-	if(selection == '0'){
+	if(selection == 0){
 		// added the '+10' on 10.5.18 (force selector carriage all the way to the left
 		// the '+10' is an attempt to move the selector ALL the way left (puts the selector into known position)
 		csTurnAmount(currentPosition + 10, CCW);      
 		currentPosition = selectorAbsPos[0];
 	}else{
 		// here we have to subtract the ASCII id/number from the char and then cast it to an int to get the correct numeric value
-		int intSelection = (int) selection - 0x30;
-		Serial.println(intSelection);
+	
 
-		if (currentPosition <= selectorAbsPos[intSelection]) {
-			csTurnAmount((selectorAbsPos[intSelection] - currentPosition), CW);
+		if (currentPosition <= selectorAbsPos[selection]) {
+			csTurnAmount((selectorAbsPos[selection] - currentPosition), CW);
 		} else {
-			csTurnAmount((currentPosition - selectorAbsPos[intSelection]), CCW);
+			csTurnAmount((currentPosition - selectorAbsPos[selection]), CCW);
 		}
-		currentPosition = selectorAbsPos[intSelection];
+		currentPosition = selectorAbsPos[selection];
 	}	
 }  
 
@@ -105,16 +111,6 @@ void ColorSelectorController::initColorSelector() {
 	csTurnAmount(MAXSELECTOR_STEPS+20, CCW);        // move all the way to the left
 
 	digitalWrite(colorSelectorEnablePin, DISABLE);   // turn off the stepper motor
-
-}
-
-void ColorSelectorController::deActivate() {
-
-#ifdef TURNOFFSELECTORMOTOR
-	digitalWrite(colorSelectorEnablePin, DISABLE);    // turn off the color selector stepper motor  (nice to do, cuts down on CURRENT utilization)
-	delay(1);
-	csStatus = INACTIVE;
-#endif
 
 }
 
