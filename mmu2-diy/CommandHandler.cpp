@@ -90,6 +90,8 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 		c2 = inputLine[index++]; 
 		c3 = inputLine[index++];
 		
+		int c2Int = static_cast<int>(c2) - '0';
+
 		// process commands coming from the mk3 controller : Extract this to a method so that 
 		// both USB and Serial printer can run the commands
 		//***********************************************************************************
@@ -108,13 +110,11 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 			application.time4 = millis();  // grab the current time
 			
 			// Request for idler and selector based on filament number
-			int filamentSelection = static_cast<int>(c2) - '0';
-			
 			Serial.print(F("T: filamentSelection = "));
-			Serial.println(filamentSelection);
+			Serial.println(c2Int);
 
-			if (filamentSelection >= 0 && filamentSelection <= 4) {
-				application.toolChange(filamentSelection);
+			if (c2Int >= 0 && c2Int <= 4) {
+				application.toolChange(c2Int);
 			} else {
 				Serial.println(F("T: Invalid filament Selection"));
 			}
@@ -149,7 +149,7 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 				idlerController.unParkIdler();                    // turn on the idler motor
 			}
 
-			if ((c2 >= '0') && (c2 <= '4')) {
+			if ((c2Int >= 0) && (c2Int <= 4)) {
 
 				filamentController.unloadFilamentToFinda();
 				idlerController.parkIdler();
@@ -176,11 +176,11 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 			if (colorSelector.csStatus == INACTIVE)
 				colorSelector.activate();         // turn on the color selector motor
 
-			if ((c2 >= '0') && (c2 <= '4')) {
+			if ((c2Int >= 0) && (c2Int <= 4)) {
 				Serial.println(F("L: Moving the bearing idler"));
-				idlerController.select(c2);   // move the filament bearing selector stepper motor to the right spot
+				idlerController.select(c2Int);   // move the filament bearing selector stepper motor to the right spot
 				Serial.println(F("L: Moving the color selector"));
-				colorSelector.select(c2);     // move the color Selector stepper Motor to the right spot
+				colorSelector.select(c2Int);     // move the color Selector stepper Motor to the right spot
 				
 				Serial.println(F("L: Loading the Filament"));
 				// filamentController.loadFilament(CCW);
@@ -271,17 +271,17 @@ void CommandHandler::printKeyboardCommandList(){
 
 void CommandHandler::printPrinterCommandList(){
 	Serial.println(F("Printer Commands:"));
-  Serial.println(F("X    : Reset           : Resets the MMU"));
-  Serial.println(F("T<x> : Tool Change     : Changes the tool to the specified filament number (0-4)"));
-  Serial.println(F("C    : Load Filament   : Loads filament to the extruder using BondTech gear"));
-  Serial.println(F("U<x> : Unload Filament : Unloads the specified filament number (0-4) to the FINDA sensor"));
-  Serial.println(F("L<x> : Load Filament   : Loads the specified filament number (0-4) into the MMU"));
-  Serial.println(F("S0   : Acknowledge     : Sends an OK response to the MK3 controller"));
-  Serial.println(F("S1   : Firmware Info   : Requests firmware version"));
-  Serial.println(F("S2   : Build Number    : Requests build number and initial communication status"));
-  Serial.println(F("P    : FINDA Status    : Checks if filament is loaded (returns 1 for loaded, 0 for not loaded)"));
-	Serial.println(F("Q    : Disable Motors  : Disables all Setpper motors"));
-  Serial.println(F("F<x> : Filament Type   : Acknowledges selected filament type (future use)"));
+  	Serial.println(F("X    : Reset           : Resets the MMU"));
+  	Serial.println(F("T<x> : Tool Change     : Changes the tool to the specified filament number (0-4)"));
+  	Serial.println(F("C    : Load Filament   : Loads filament to the extruder using BondTech gear"));
+  	Serial.println(F("U<x> : Unload Filament : Unloads the specified filament number (0-4) to the FINDA sensor"));
+  	Serial.println(F("L<x> : Load Filament   : Loads the specified filament number (0-4) into the MMU"));
+  	Serial.println(F("S0   : Acknowledge     : Sends an OK response to the MK3 controller"));
+  	Serial.println(F("S1   : Firmware Info   : Requests firmware version"));
+  	Serial.println(F("S2   : Build Number    : Requests build number and initial communication status"));
+  	Serial.println(F("P    : FINDA Status    : Checks if filament is loaded (returns 1 for loaded, 0 for not loaded)"));
+  	Serial.println(F("Q    : Disable Motors  : Disables all Setpper motors"));
+  	Serial.println(F("F<x> : Filament Type   : Acknowledges selected filament type (future use)"));
 	Serial.println();
 	Serial.println();
 }

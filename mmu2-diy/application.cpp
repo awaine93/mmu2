@@ -187,13 +187,12 @@ void Application::checkSerialInterface() {
 	if ((cnt = Serial1.available()) > 0) {
 
 		inputLine = Serial1.readString();      // fetch the command from the mmu2 serial input interface
-
-		if (inputLine[0] != 'P') {
-			Serial.print(F("MMU Command: "));
-			Serial.println(inputLine);
-		}
+		
+		Serial.print(F("MMU Command: "));
+		Serial.println(inputLine);
+	
 process_more_commands:  // parse the inbound command
-
+		Serial.println(F("Processing the inbound command"));
 		index = commandHandler.handlePrinterCommand(inputLine, index);
 
 #ifdef NOTDEF
@@ -291,6 +290,7 @@ void processKeyboardInput() {
 			
 		if (colorSelector.csStatus == INACTIVE)
 			colorSelector.activate();         // turn on the color selector motor
+
 
 		idlerController.select((int)receivedChar);   // move the filament selector stepper motor to the right spot
 		colorSelector.select(receivedChar);     // move the color Selector stepper Motor to the right spot
