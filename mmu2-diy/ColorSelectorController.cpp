@@ -85,12 +85,12 @@ void ColorSelectorController::csTurnAmount(int steps, int direction) {
 	// wait 1 milliseconds
 	delayMicroseconds(1500);                      // changed from 500 to 1000 microseconds on 10.6.18, changed to 1500 on 10.7.18)
 
-
 	for (i = 0; i <= (steps * STEPSIZE); i++) {                      // fixed this to '<=' from '<' on 10.5.18
 		digitalWrite(colorSelectorStepPin, HIGH);
 		delayMicroseconds(PINHIGH);               // delay for 10 useconds
 		digitalWrite(colorSelectorStepPin, LOW);
 		delayMicroseconds(PINLOW);               // delay for 10 useconds  (added back in on 10.8.2018)
+	
 		delayMicroseconds(COLORSELECTORMOTORDELAY);         // wait for 400 useconds
 
 	}

@@ -136,8 +136,8 @@ continue_processing:
 	Serial.println(F("finished setting up input and output pins"));
 
 	// Turn on all three stepper motors
-	digitalWrite(idlerEnablePin, ENABLE);           // enable the roller bearing motor (motor #1)
-	digitalWrite(extruderEnablePin, ENABLE);        //  enable the extruder motor  (motor #2)
+	idlerController.enable();					// enable the roller bearing motor (motor #1)        
+	digitalWrite(extruderEnablePin, ENABLE);       //  enable the extruder motor  (motor #2)
 	digitalWrite(colorSelectorEnablePin, ENABLE);  // enable the color selector motor  (motor #3)
 
 	Serial.println(F("Syncing the Idler Selector Assembly"));             // do this before moving the selector motor
@@ -367,7 +367,7 @@ void Application::toolChange(int selection) {
 			repeatTCmdFlag = INACTIVE;   // used to help the 'C' command
 		} else {
 			Serial.println(F("Application.toolChange():  filament already loaded to mk3 extruder"));
-			//*********************************************************************************************
+			//********************************************************************************************
 			//* added on 10.8.18 to help the 'C' Command
 			//*********************************************************************************************
 			repeatTCmdFlag = ACTIVE;     // used to help the 'C' command to not feed the filament again
@@ -383,7 +383,6 @@ void Application::toolChange(int selection) {
 			idlerController.select(currentExtruder);   	 // point to the current extruder
 			filamentController.unloadFilamentToFinda();  // have to unload the filament first
 		}
-
 
 		if (trackToolChanges > TOOLSYNC) {             // reset the color selector stepper motor (gets out of alignment)
 			Serial.println(F("Application.toolChange(): syncing the Filament Selector Head"));

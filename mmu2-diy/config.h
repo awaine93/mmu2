@@ -4,7 +4,7 @@
 
 #define MMU2_VERSION "4.3  03/02/23"
 
-#define STEPSPERMM  144           // these are the number of steps required to travel 1 mm using the extruder motor
+#define STEPSPERMM  9 		      // these are the number of steps required to travel 1 mm using the extruder motor --- This value was set to 144 but this wascalculated for 16th microstepping
 #define LENGTHTOMK3GEAR 32		  // this is the length from the the filament sesnor to extruder gear after and will 
 								  // extrude this length after the sensor has been triggered
 
@@ -76,7 +76,7 @@ extern float bearingAbsPos[5];
 //*************************************************************************************************
 //  Delay values for each stepper motor 
 //*************************************************************************************************
-#define IDLERMOTORDELAY  540     //540 useconds      (idler motor)  was at '500' on 10.13.18
+#define IDLERMOTORDELAY  530     //530 useconds      (idler motor)
 #define EXTRUDERMOTORDELAY 50     // 150 useconds    (controls filament feed speed to the printer)
 #define COLORSELECTORMOTORDELAY 60 // 60 useconds    (selector motor)
 
@@ -101,8 +101,6 @@ extern float bearingAbsPos[5];
 #define colorSelectorDirPin		A1 //color selector stepper motor (driven by trapezoidal screw)
 #define colorSelectorStepPin	A0
 #define colorSelectorEnablePin	38
-
-
 
 #define findaPin  A3 
 // this is pin D3 on the arduino MEGA 2650

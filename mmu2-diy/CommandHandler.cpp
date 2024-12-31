@@ -273,7 +273,7 @@ void CommandHandler::printPrinterCommandList(){
 	Serial.println(F("Printer Commands:"));
   	Serial.println(F("X    : Reset           : Resets the MMU"));
   	Serial.println(F("T<x> : Tool Change     : Changes the tool to the specified filament number (0-4)"));
-  	Serial.println(F("C    : Load Filament   : Loads filament to the extruder using BondTech gear"));
+  	Serial.println(F("C    : Load Filament   : Loads filament to the Mk3 extruder"));
   	Serial.println(F("U<x> : Unload Filament : Unloads the specified filament number (0-4) to the FINDA sensor"));
   	Serial.println(F("L<x> : Load Filament   : Loads the specified filament number (0-4) into the MMU"));
   	Serial.println(F("S0   : Acknowledge     : Sends an OK response to the MK3 controller"));

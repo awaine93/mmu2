@@ -115,7 +115,7 @@ void FilamentController::filamentLoadWithBondTechGear() {
 
 	//*******************************************************************************************
 	// feed the filament from the MMU2 into the bondtech gear for 2 seconds at 10 mm/sec
-	// STEPPERMM : 144, 1: duration in seconds,  21: feed rate (in mm/sec)
+	// (STEPPERMM * STEPSIZE): 144, 1: duration in seconds,  21: feed rate (in mm/sec)
 	// delay: 674 (for 10 mm/sec)
 	// delay: 350 (for 21 mm/sec)
 	// LOAD_DURATION:  1 second (time to spend with the mmu2 extruder active)
@@ -131,8 +131,6 @@ void FilamentController::filamentLoadWithBondTechGear() {
 	//********************************************************************************************
 	// delayFactor = ((LOAD_DURATION * 1000.0) / (LOAD_SPEED * STEPSPERMM)) - INSTRUCTION_DELAY;   // compute the delay factor (in microseconds)
 
-	// for (i = 0; i < (STEPSPERMM * 1 * 21); i++) {
-
 	tSteps =   STEPSPERMM * ((float)LOAD_DURATION / 1000.0) * LOAD_SPEED;             // compute the number of steps to take for the given load duration
 	delayFactor = (float(LOAD_DURATION * 1000.0) / tSteps) - INSTRUCTION_DELAY;            // 2nd attempt at delayFactor algorithm
 
@@ -141,47 +139,19 @@ void FilamentController::filamentLoadWithBondTechGear() {
 	Serial.println(tSteps);
 #endif
 
-	for (i = 0; i < tSteps; i++) {
+	for (i = 0; i <= (tSteps * STEPSIZE); i++) {
 		digitalWrite(extruderStepPin, HIGH);  // step the extruder stepper in the MMU2 unit
 		delayMicroseconds(PINHIGH);
 		digitalWrite(extruderStepPin, LOW);
-		//*****************************************************************************************************
-		// replace '350' with delayFactor once testing of variable is complete
-		//*****************************************************************************************************
-		// after further testing, the '350' can be replaced by delayFactor
+		delayMicroseconds(PINLOW);
+		
 		delayMicroseconds(delayFactor);             // this was calculated in order to arrive at a 10mm/sec feed rate
 		++stepCount;
 	}
-	digitalWrite(greenLED, LOW);                      // turn off the green LED (for debug purposes)
+
+	//digitalWrite(greenLED, LOW);                      // turn off the green LED (for debug purposes)
 
 	application.time1 = millis();
-
-
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// copied from the MM-control-01/blob/master/motion.cpp routine
-	// NO LONGER USED (abandoned in place on 10.7.18) ... came up with a better algorithm (see above)
-	//
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//***********************************************************************************************************
-	//* THIS CODE WORKS BUT IT LEADS TO SOME GRINDING AT THE MMU2 WHILE THE BONDTECH GEAR IS LOADING THE FILAMENT
-	//***********************************************************************************************************
-#ifdef NOTDEF
-	for (i = 0; i <= 320; i++) {
-		digitalWrite(extruderStepPin, HIGH);
-		delayMicroseconds(PINHIGH);               // delay for 10 useconds
-		digitalWrite(extruderStepPin, LOW);
-		//delayMicroseconds(2600);             // originally 2600
-		delayMicroseconds(800);              // speed up by a factor of 3
-
-	}
-	for (i = 0; i <= 450; i++) {
-		digitalWrite(extruderStepPin, HIGH);
-		delayMicroseconds(PINHIGH);               // delay for 10 useconds
-		digitalWrite(extruderStepPin, LOW);
-		// delayMicroseconds(2200);            // originally 2200
-		delayMicroseconds(800);             // speed up by a factor of 3
-	}
-#endif
 
 #ifdef DEBUG
 	Serial.println(F("C Command: parking the idler"));
@@ -336,14 +306,7 @@ void FilamentController::feedFilament(unsigned int steps) {
 
 	int i;
 
-#ifdef NOTDEF
-	if (steps > 1) {
-		Serial.print(F("Steps: "));
-		Serial.println(steps);
-	}
-#endif
-
-	for (i = 0; i <= steps; i++) {
+	for (i = 0; i <= steps * STEPSIZE; i++) {
 		digitalWrite(extruderStepPin, HIGH);
 		delayMicroseconds(PINHIGH);               // delay for 10 useconds
 		digitalWrite(extruderStepPin, LOW);
@@ -364,14 +327,14 @@ void FilamentController::loadFilament(int direction) {
 	switch (direction) {
 	case CCW:                     // load filament
 loop:
-		feedFilament(1);        // 1 step and then check the pinda status
+		feedFilament(STEPSPERMM);        // 1 mm and then check the pinda status
 
 		findaStatus = isFilamentLoaded();
 		if (findaStatus == 1)              // keep feeding the filament until the pinda sensor triggers
 			goto loop;
 		Serial.println(F("Pinda Sensor Triggered"));
-		// now feed the filament ALL the way to the printer extruder assembly
 
+		// now feed the filament ALL the way to the printer extruder assembly
 		steps = 17 * 200 * STEPSIZE;
 
 		Serial.print(F("steps: "));
@@ -390,12 +353,9 @@ loop1:
 
 		feedFilament(STEPSPERMM * 23);      // move 23mm so we are out of the way of the selector
 
-
 		break;
 	default:
 		Serial.println(F("loadFilament:  I shouldn't be here !!!!"));
-
-
 	}
 }
 
