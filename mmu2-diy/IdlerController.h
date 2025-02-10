@@ -14,10 +14,8 @@ public:
 	void initIdlerPosition();
     void quickunParkIdler();
     void unParkIdler();
-    void specialunParkIdler();
     void parkIdler();
     void quickParkIdler();
-    void specialParkIdler();
     void select(int filament);
     void turnamount(int steps, int dir);
     void enable();
@@ -26,7 +24,6 @@ public:
     // Variables
     int status;
 
-private:
     StepperMotor _idlerMotor;
 };
 

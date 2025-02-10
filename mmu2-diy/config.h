@@ -5,7 +5,7 @@
 #define MMU2_VERSION "4.3  03/02/23"
 
 #define STEPSPERMM  9 		      // these are the number of steps required to travel 1 mm using the extruder motor --- This value was set to 144 but this wascalculated for 16th microstepping
-#define LENGTHTOMK3GEAR 32		  // this is the length from the the filament sesnor to extruder gear after and will 
+#define LENGTHTOMK3GEAR 70		  // this is the length from the the filament sesnor to extruder gear after and will 
 								  // extrude this length after the sensor has been triggered
 
 #define FW_VERSION  132//90             // config.h  (MM-control-01 firmware)

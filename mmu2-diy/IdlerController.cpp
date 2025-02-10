@@ -5,6 +5,7 @@
 #include "application.h"
 #include "config.h"
 #include "IdlerController.h"
+#include "FilamentController.h"
 
 int oldBearingPosition = 0;      // this tracks the roller bearing position (top motor on the MMU)
 int idlerStatus = INACTIVE;
@@ -24,21 +25,12 @@ void IdlerController::disable(){
 
 // Perform this function only at power up/reset
 void IdlerController::initIdlerPosition() {
-	Serial.println(F("initIdlerPosition(): resetting the Idler Roller Bearing position"));
-	
-	Serial.print(F("IdlerStepPin"));
-    Serial.println(idlerStepPin);
-	
-	//_idlerMotor.enable();
-
-
-	//digitalWrite(idlerEnablePin, ENABLE);   
+	Serial.println(F("initIdlerPosition(): resetting the Idler Roller Bearing position"));	 
 	delay(1);
 	oldBearingPosition = 125;                // points to position #1
 	turnamount(MAXROLLERTRAVEL, CW);
 	turnamount(MAXROLLERTRAVEL, CCW);                // move the bearings out of the way
 	_idlerMotor.disable();
-	//digitalWrite(idlerEnablePin, DISABLE);
 
 	application.filamentSelection = 0;       // keep track of filament selection (0,1,2,3,4))
 	application.currentExtruder = 0;
@@ -50,16 +42,13 @@ void IdlerController::initIdlerPosition() {
 void IdlerController::quickunParkIdler() {
 	int rollerSetting;
 
-	//*********************************************************************************************************
-	//* don't need to turn on the idler ... it is already on (from the 'T' command)
-	//*********************************************************************************************************
-
-	//digitalWrite(idlerEnablePin, ENABLE);   // turn on the roller bearing motor
-	//delay(1);                              // wait for 1 millisecond
-	//if (status != QUICKPARKED) {
-	//    Serial.println(F("quickunParkIdler(): idler already parked"));
-	//    return;                              // do nothing since the idler is not 'quick parked'
-	//}
+	_idlerMotor.enable();  // turn on the roller bearing motor
+	delay(1);                              // wait for 1 millisecond
+	
+	if (status != QUICKPARKED) {
+		_idlerMotor.disable();
+	    return;                              // do nothing since the idler is not 'quick parked'
+	}
 
 	// re-enage the idler bearing that was only moved 1 position (for quicker re-engagement)
 
@@ -69,17 +58,11 @@ void IdlerController::quickunParkIdler() {
 	oldBearingPosition = rollerSetting - IDLERSTEPSIZE;    // keep track of the idler position
 
 	status = ACTIVE;                   // mark the idler as active
-
 }
 
-// turn on the idler bearing rollers
+// Turns on the idler bearing rollers
 void IdlerController::unParkIdler() {
 	int rollerSetting;
-
-	_idlerMotor.enable();
-	// digitalWrite(idlerEnablePin, ENABLE);  
-	digitalWrite(extruderEnablePin, ENABLE);
-	delay(1);
 	
 	rollerSetting = MAXROLLERTRAVEL - bearingAbsPos[application.filamentSelection];
 	oldBearingPosition = bearingAbsPos[application.filamentSelection]; // update the idler bearing position
@@ -93,30 +76,19 @@ void IdlerController::unParkIdler() {
 void IdlerController::parkIdler() {
 	int newSetting;
 
-	_idlerMotor.enable();
-	//digitalWrite(idlerEnablePin, ENABLE);
-	delay(1);
-
 	newSetting = MAXROLLERTRAVEL - oldBearingPosition;
 
 	turnamount(newSetting, CCW);     // move the bearing roller out of the way
 	oldBearingPosition = MAXROLLERTRAVEL;   // record the current roller status  (CSK)
 
 	status = INACTIVE;
-	_idlerMotor.disable();
-	//digitalWrite(idlerEnablePin, DISABLE);    // turn off the roller bearing stepper motor  (nice to do, cuts down on CURRENT utilization)
-	digitalWrite(extruderEnablePin, DISABLE); // turn off the extruder stepper motor as well
-
+	_idlerMotor.disable();   // turn off the roller bearing stepper motor  (nice to do, cuts down on CURRENT utilization)
 }
 
 // attempt to disengage the idler bearing after a 'T' command instead of parking the idler
 //  this is trying to save significant time on re-engaging the idler when the 'C' command is activated
 void IdlerController::quickParkIdler() {
 	int newSetting;
-	
-	_idlerMotor.enable();
-	//digitalWrite(idlerEnablePin, ENABLE);
-	delay(1);
 
 	//**************************************************************************************************
 	//*  this is flawed logic, if I have done a special park idler the oldBearingPosition doesn't map exactly to the application.filamentSelection
@@ -133,89 +105,13 @@ void IdlerController::quickParkIdler() {
 
 	//*************************************************************************************************
 
-		newSetting = oldBearingPosition + IDLERSTEPSIZE;       // try to move 12 units (just to disengage the roller)
-		turnamount(IDLERSTEPSIZE, CCW);
+	newSetting = oldBearingPosition + IDLERSTEPSIZE;       // try to move 12 units (just to disengage the roller)
+	turnamount(IDLERSTEPSIZE, CCW);
 	oldBearingPosition = oldBearingPosition + IDLERSTEPSIZE; // record the current position of the IDLER bearing
 
 	status = QUICKPARKED; // use this new state to show the idler is pending the 'C0' command
 
-	// DO NOT TURN OFF THE IDLER ... needs to be held in position ---- why ? 
-	_idlerMotor.disable();
-	//digitalWrite(idlerEnablePin, DISABLE);    // turn off the roller bearing stepper motor  (nice to do, cuts down on CURRENT utilization)
-	digitalWrite(extruderEnablePin, DISABLE); // turn off the extruder stepper motor as well
-
-}
-
-//***************************************************************************************************************
-//* called by 'C' command to park the idler
-//***************************************************************************************************************
-void IdlerController::specialParkIdler() {
-	int newSetting, idlerSteps;
-
-	_idlerMotor.enable();
-	//digitalWrite(idlerEnablePin, ENABLE);                          // turn on the idler stepper motor
-	delay(1);
-
-	// oldBearingPosition = bearingAbsPos[application.filamentSelection];          // fetch the bearing position based on the filament state
-
-	//*************************************************************************************************
-	//*  this is a new approach to moving the idler just a little bit (off the filament)
-	//*  in preparation for the 'C' Command
-
-	//*************************************************************************************************
-	if (IDLERSTEPSIZE % 2) {
-		idlerSteps = IDLERSTEPSIZE / 2 + 1;                         // odd number processing, need to round up
-
-	} else {
-		idlerSteps = IDLERSTEPSIZE / 2;
-
-	}
-
-	newSetting = oldBearingPosition + idlerSteps;     // try to move 6 units (just to disengage the roller)
-	turnamount(idlerSteps, CCW);
-
-	//************************************************************************************************
-	//* record the idler position  (get back to where we were)
-	//***********************************************************************************************
-	oldBearingPosition = oldBearingPosition + idlerSteps;       // record the current position of the IDLER bearing
-
-	status = QUICKPARKED;                 // use this new state to show the idler is pending the 'C0' command
-
-	//* SPECIAL DEBUG (10.13.18 - evening)
-	//* turn off the idler stepper motor
-	_idlerMotor.disable();
-	// digitalWrite(idlerEnablePin, DISABLE);    // turn off the roller bearing stepper motor  (nice to do, cuts down on CURRENT utilization)
-
-}
-
-//*********************************************************************************************
-//  this routine is called by the 'C' command to re-engage the idler bearing
-//*********************************************************************************************
-void IdlerController::specialunParkIdler() {
-	int newSetting, idlerSteps;
-
-	// re-enage the idler bearing that was only moved 1 position (for quicker re-engagement)
-
-	if (IDLERSTEPSIZE % 2) {
-		idlerSteps = IDLERSTEPSIZE / 2 + 1;                         // odd number processing, need to round up
-
-	} else {
-		idlerSteps = IDLERSTEPSIZE / 2;
-	}
-
-	newSetting = oldBearingPosition - idlerSteps; // go back IDLERSTEPSIZE units (hopefully re-enages the bearing
-	turnamount(idlerSteps, CW); // restore old position
-
-	// MIGHT BE A BAD IDEA
-	oldBearingPosition = oldBearingPosition - idlerSteps;    // keep track of the idler position
-
-#ifdef DEBUGIDLER
-	Serial.print(F("SpecialunParkIdler()  oldBearingPosition: (end of routine):  "));
-	Serial.println(oldBearingPosition);
-#endif
-
-	status = ACTIVE;                   // mark the idler as active
-
+	_idlerMotor.disable();   // turn off the roller bearing stepper motor  (nice to do, cuts down on CURRENT utilization)
 }
 
 // this routine drives the 5 position bearings (aka idler) on the top of the MMU2 carriage
@@ -249,6 +145,7 @@ void IdlerController::select(int filament) {
 }
 
 //
+// NOTE - THIS MEHTOD WILL LEAVE THE IDLER MOTOR ENABLED AND WILL NEED TO BE HANDLED AFTER THIS METHOD IS CALLED
 // turn the idler stepper motor
 //
 void IdlerController::turnamount(int steps, int dir) {
@@ -257,25 +154,14 @@ void IdlerController::turnamount(int steps, int dir) {
 
 	Serial.println(F("moving the idler ..."));
 	Serial.print(F("steps: "));
-	Serial.print(steps);
+	Serial.println(steps);
 	Serial.print(F("dir: "));
 	Serial.println(dir);
 
-	//_idlerMotor.enable();
-	//digitalWrite(idlerEnablePin, ENABLE);   // turn on motor
+	_idlerMotor.enable();
 	_idlerMotor.setDirection(dir);
-	//digitalWrite(idlerDirPin, dir);
 	delay(1);
 
 	_idlerMotor.step(steps, IDLERMOTORDELAY);
-
-	// for (i = 0; i <= (steps * STEPSIZE); i++) {
-	// 	digitalWrite(idlerStepPin, HIGH);
-	// 	delayMicroseconds(PINHIGH);               // delay for 10 useconds
-	// 	digitalWrite(idlerStepPin, LOW);
-	// 	//delayMicroseconds(PINLOW);    // delay for 10 useconds (removed on 10.7.18 -- why?
-		
-	// 	delayMicroseconds(IDLERMOTORDELAY);
-	//}
 
 }

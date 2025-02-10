@@ -3,6 +3,8 @@
 #include "StepperMotor.h"
 #include "config.h"
 
+int enabled = 0;
+
 StepperMotor::StepperMotor(uint8_t enablePin, uint8_t dirPin, uint8_t stepPin)
     : _enablePin(enablePin), _dirPin(dirPin), _stepPin(stepPin) 
     {
@@ -12,11 +14,13 @@ StepperMotor::StepperMotor(uint8_t enablePin, uint8_t dirPin, uint8_t stepPin)
 void StepperMotor::enable() {
     digitalWrite(_enablePin, ENABLE);
     enabled = 1;
+    delay(1);
 }
 
 void StepperMotor::disable() {
     digitalWrite(_enablePin, DISABLE);
     enabled = 0;
+    delay(1);
 }
 
 void StepperMotor::setDirection(int direction) {

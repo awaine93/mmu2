@@ -2,6 +2,8 @@
 #define FILAMENTCONTROLLER_H
 
 #include <Arduino.h>
+#include "StepperMotor.h"
+
 
 
 class FilamentController
@@ -16,11 +18,12 @@ public:
     void feedFilament(unsigned int);
     void loadFilament(int);
     void printFilamentStats();
-    void activate();
-    void deActivate();
+    void enable();
+    void disable();
 	
     // Variables
     int filStatus;
+    StepperMotor _filamentMotor;
 
 };
 
