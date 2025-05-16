@@ -12,6 +12,7 @@ public:
 	int handlePrinterCommand(String, int);
  	void printKeyboardCommandList();
 	void printPrinterCommandList();
+	void printMotorStatus();
 };
 
 
