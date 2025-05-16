@@ -2,26 +2,22 @@
 #define COLORSELECTORCONTROLLER_H
 
 #include <Arduino.h>
-#include "StepperMotor.h"
 
 
 class ColorSelectorController
 {
 public:
 	ColorSelectorController();
-    void enable();
-    void disable();
+    void activate();
     void select(int selection);
     void csTurnAmount(int steps, int direction);
     void initColorSelector();
-    
+    void deActivate();
     void syncColorSelector();
 
     // Variables 
     int csStatus;
     int currentPosition;
-
-    StepperMotor _colorSelectorMotor;
 };
 
 #endif // COLORSELECTORCONTROLLER_H

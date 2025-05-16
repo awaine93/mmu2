@@ -55,17 +55,14 @@ void CommandHandler::keyboardCommands(){
 		case 'U':
 			Serial.println(F("Processing 'U' Command : Unload Filiment"));
 			idlerController.parkIdler(); // reset the idler
-			filamentController.disable(); // turn off the extruder stepper motor as well
 			if (idlerController.status == QUICKPARKED) {
 				idlerController.quickunParkIdler();             // un-park the idler from a quick park
 			}
 			if (idlerController.status == INACTIVE) {
-				filamentController.enable();
-				delay(1);
 				idlerController.unParkIdler();                    // turn on the idler motor
 			}
 			filamentController.unloadFilamentToFinda();          //unload the filament
-			idlerController.parkIdler();  
+			idlerController.parkIdler();   
 			application.disableAllMotors();
 			break;
 		case 'X':
@@ -124,19 +121,18 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 
 			Serial1.print(F("ok\n"));              // send command acknowledge back to mk3 controller
 			application.time5 = millis();          // grab the current time
-			printMotorStatus();
+
 			break;
 		case 'C':
-			// This command expects the T command to be run before it
 			Serial.println(F("C: Moving filament to extruder"));
 			// move filament from selector ALL the way to print head
 			
-			//filamentController.filamentLoadToMK3();
+			// filamentLoadToMK3();
 			filamentController.filamentLoadWithBondTechGear();
 			// delay(200);
 			Serial1.print(F("ok\n"));
-			printMotorStatus();
 			break;
+
 		case 'U':
 			// UNLOAD FILIMENT COMMAND
 			// request for filament unload
@@ -146,16 +142,10 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 			//*  FIX:  don't go all the way to the end ... be smarter
 			//******************************************************************************************************
 			//* unparking is more elegant 10.12.1
-			Serial.print(F("idlerController.status"));
-			Serial.println(idlerController.status);
-
-
 			if (idlerController.status == QUICKPARKED) {
 				idlerController.quickunParkIdler();             // un-park the idler from a quick park
 			}
 			if (idlerController.status == INACTIVE) {
-				filamentController.enable();
-				delay(1);
 				idlerController.unParkIdler();                    // turn on the idler motor
 			}
 
@@ -163,7 +153,6 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 
 				filamentController.unloadFilamentToFinda();
 				idlerController.parkIdler();
-				filamentController.disable(); // turn off the extruder stepper motor as well
 				Serial.println(F("U: Sending Filament Unload Acknowledge to MK3"));
 				delay(200);
 				Serial1.print(F("ok\n"));
@@ -173,35 +162,31 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 				delay(200);
 				Serial1.print(F("ok\n"));
 			}
-			filamentController.disable();
-			printMotorStatus();
 			break;
 		case 'L':
 			Serial.println(F("L: Filament Load Selected"));
 
 			if (idlerController.status == QUICKPARKED) {
-				idlerController.quickunParkIdler();
+				idlerController.quickunParkIdler();             // un-park the idler from a quick park
 			}
-			
 			if (idlerController.status == INACTIVE) {
-				filamentController.enable();
-				delay(1);
-				idlerController.unParkIdler();                   
+				idlerController.unParkIdler();                    // turn on the idler motor
 			}
-		
-			if (colorSelector._colorSelectorMotor.enabled == 0){
-				colorSelector.enable();         
-			}
+
+			if (colorSelector.csStatus == INACTIVE)
+				colorSelector.activate();         // turn on the color selector motor
 
 			if ((c2Int >= 0) && (c2Int <= 4)) {
-				idlerController.select(c2Int);   
-				colorSelector.select(c2Int); 
-
+				Serial.println(F("L: Moving the bearing idler"));
+				idlerController.select(c2Int);   // move the filament bearing selector stepper motor to the right spot
+				Serial.println(F("L: Moving the color selector"));
+				colorSelector.select(c2Int);     // move the color Selector stepper Motor to the right spot
+				
+				Serial.println(F("L: Loading the Filament"));
+				// filamentController.loadFilament(CCW);
 				filamentController.loadFilamentToFinda();
 				
-				idlerController.parkIdler();             
-				filamentController.disable();
-				colorSelector.disable();
+				idlerController.parkIdler();             // turn off the idler roller
 
 				Serial.println(F("L: Sending Filament Load Acknowledge to MK3"));
 
@@ -212,7 +197,6 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 			} else {
 				Serial.println(F("Error: Invalid Filament Number Selected"));
 			}
-			printMotorStatus();
 			break;
 
 		case 'S':
@@ -237,7 +221,6 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 				Serial.println(F("S: Unable to process S Command"));
 				break;
 			}
-			printMotorStatus();
 			break;
 		case 'P':
 			// check FINDA status
@@ -249,45 +232,26 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 				Serial1.println(F("0"));
 			}
 			Serial1.print(F("ok\n"));
-			printMotorStatus();
+
 			break;
 		case 'Q':
 			Serial.println(F("Processing 'Q' Command : Disable Motors"));
 			application.disableAllMotors();
-			printMotorStatus();
 			break;
 		case 'F':  // 'F' command is acknowledged but no processing goes on at the moment
 			// will be useful for flexible material down the road
 			Serial.println(F("Filament Type Selected: "));
 			Serial.println(c2);
 			Serial1.print(F("ok\n"));                        // send back OK to the mk3
-			printMotorStatus();
-			break;
-		case 'M': 
-			Serial.println(F("Motor Status Request"));
-			printMotorStatus();
 			break;
 		default:
 			Serial.print(F("ERROR: unrecognized command from the MK3 controller"));
 			Serial1.print(F("ok\n"));
+
 		}  // end of switch statement
 	return index;
 }
 
-
-void CommandHandler::printMotorStatus(){
-
-	Serial.println(F("Motor Status:"));
-	Serial.print(F("Extruder: "));
-	Serial.println(filamentController._filamentMotor.enabled);
-	Serial.print(F("Idler: "));
-	Serial.println(idlerController._idlerMotor.enabled);
-	Serial.print(F("Color Selector: "));
-	Serial.println(colorSelector._colorSelectorMotor.enabled);
-
-	Serial.print(F("Idler Park Status:"));
-	Serial.println(idlerController.status);
-}
 
 
 // Lists all available keyboard commands 
@@ -309,7 +273,7 @@ void CommandHandler::printPrinterCommandList(){
 	Serial.println(F("Printer Commands:"));
   	Serial.println(F("X    : Reset           : Resets the MMU"));
   	Serial.println(F("T<x> : Tool Change     : Changes the tool to the specified filament number (0-4)"));
-  	Serial.println(F("C    : Load Filament   : Loads filament to the Mk3 extruder"));
+  	Serial.println(F("C    : Load Filament   : Loads filament to the extruder using BondTech gear"));
   	Serial.println(F("U<x> : Unload Filament : Unloads the specified filament number (0-4) to the FINDA sensor"));
   	Serial.println(F("L<x> : Load Filament   : Loads the specified filament number (0-4) into the MMU"));
   	Serial.println(F("S0   : Acknowledge     : Sends an OK response to the MK3 controller"));

@@ -113,14 +113,14 @@ void Application::setup() {
   
 
 continue_processing:
-	
-	pinMode(idlerEnablePin, OUTPUT);
+
 	pinMode(idlerDirPin, OUTPUT);
 	pinMode(idlerStepPin, OUTPUT);
 
 	pinMode(findaPin, INPUT);  // pinda Filament sensor
 	pinMode(filamentSwitch, INPUT);
-	
+
+	pinMode(idlerEnablePin, OUTPUT);
 	// pinMode(bearingRstPin, OUTPUT);
 
 	pinMode(extruderEnablePin, OUTPUT);
@@ -136,9 +136,9 @@ continue_processing:
 	Serial.println(F("finished setting up input and output pins"));
 
 	// Turn on all three stepper motors
-	idlerController.enable();					// enable the roller bearing motor (motor #1)        
-	//filamentController.enable();      //  enable the extruder motor  (motor #2) -- not sure we want to enable this on startup 
-	colorSelector.enable(); // enable the color selector motor  (motor #3)
+	digitalWrite(idlerEnablePin, ENABLE);           // enable the roller bearing motor (motor #1)
+	digitalWrite(extruderEnablePin, ENABLE);        //  enable the extruder motor  (motor #2)
+	digitalWrite(colorSelectorEnablePin, ENABLE);  // enable the color selector motor  (motor #3)
 
 	Serial.println(F("Syncing the Idler Selector Assembly"));             // do this before moving the selector motor
 	idlerController.initIdlerPosition();    // reset the roller bearing position
@@ -158,9 +158,6 @@ continue_processing:
 		Serial.println(F("Unable to clear the Color Selector, please remove filament"));
 	}
 
-	idlerController.disable();
-	colorSelector.disable();
-
 	Serial.println(F("Inialialization Complete, let's multicolor print ...."));
 
 } 
@@ -175,9 +172,9 @@ void Application::loop() {
 } 
 
 void Application::disableAllMotors(){
-	colorSelector.disable();
-	idlerController.disable();
-	filamentController.disable();
+	digitalWrite(colorSelectorEnablePin, DISABLE); 
+	digitalWrite(extruderEnablePin, DISABLE);  
+	digitalWrite(idlerEnablePin, DISABLE);  
 }
 
 // Handles any command incomming from the printer's serial
@@ -232,8 +229,7 @@ void Application::fixTheProblem(String statement) {
 	Serial.println(F(""));
 
 	idlerController.parkIdler();                                    // park the idler stepper motor
-	filamentController.disable(); // turn off the extruder stepper motor as well
-	colorSelector.disable(); // turn off the selector stepper motor
+	digitalWrite(colorSelectorEnablePin, DISABLE);  // turn off the selector stepper motor
 
 	//quickParkIdler();                   // move the idler out of the way
 	// specialParkIdler();
@@ -242,10 +238,10 @@ void Application::fixTheProblem(String statement) {
 		//  wait until key is entered to proceed  (this is to allow for operator intervention)
 	}
 	Serial.readString();  // clear the keyboard buffer
-	filamentController.enable();
-	delay(1);
-	idlerController.unParkIdler();  // put the idler stepper motor back to its' original position
-	colorSelector.disable();  		// turn ON the selector stepper motor
+
+	idlerController.unParkIdler();                             // put the idler stepper motor back to its' original position
+	digitalWrite(colorSelectorEnablePin, ENABLE);  // turn ON the selector stepper motor
+	delay(1);                                  // wait for 1 millisecond
 
 	//specialunParkIdler();
 	//idlerController.unParkIdler();
@@ -287,13 +283,14 @@ void processKeyboardInput() {
 	case '3':
 	case '4':
 	case '5':
-		if (idlerController._idlerMotor.enabled == 0){
-			idlerController.enable();   // turn on the roller bearing stepper motor
+		if (idlerController.status == INACTIVE){
+			digitalWrite(idlerEnablePin, ENABLE);   // turn on the roller bearing stepper motor
+			idlerController.status = ACTIVE;
 		}
 			
-		if (colorSelector._colorSelectorMotor.enabled == 0){
-			colorSelector._colorSelectorMotor.enable();         // turn on the color selector motor
-		}
+		if (colorSelector.csStatus == INACTIVE)
+			colorSelector.activate();         // turn on the color selector motor
+
 
 		idlerController.select((int)receivedChar);   // move the filament selector stepper motor to the right spot
 		colorSelector.select(receivedChar);     // move the color Selector stepper Motor to the right spot
@@ -302,28 +299,21 @@ void processKeyboardInput() {
 	case 'd':                             // de-active the bearing roller stepper motor and color selector stepper motor
 	case 'D':
 		idlerController.parkIdler();
-		filamentController.disable(); // turn off the extruder stepper motor as well
-		colorSelector.enable();
+		colorSelector.deActivate();
 		break;
 	case 'l':                            // start the load process for the filament
 	case 'L':
 		// idlerController.unParkIdler();
 		if (idlerController.status == INACTIVE)
-			filamentController.enable();
-			delay(1);
 			idlerController.unParkIdler();
 		filamentController.loadFilament(CCW);
 		idlerController.parkIdler();          // move the bearing rollers out of the way after a load is complete
-		filamentController.disable(); // turn off the extruder stepper motor as well
 		break;
 	case 'u':                           // unload the filament from the MMU2 device
 	case 'U':
-		filamentController.enable();
-		delay(1);
 		idlerController.unParkIdler();           // working on this command
 		filamentController.loadFilament(CW);
 		idlerController.parkIdler();         // after the unload of the filament, move the bearing rollers out of the way
-		filamentController.disable(); // turn off the extruder stepper motor as well
 		break;
 	case 't':
 	case 'T':
@@ -347,7 +337,10 @@ void Application::toolChange(int selection) {
 	++toolChangeCount;                             // count the number of tool changes
 	++trackToolChanges;
 
-	// reset the tool change count if the colour selector has been to 0 position as we know it will be on the left no matter what
+	//**********************************************************************************
+	// * 10.10.18 added an automatic reset of the tracktoolchange counter since going to
+	//            filament position '0' move the color selection ALL the way to the left
+	//*********************************************************************************
 	if (selection == 0)  {
 		trackToolChanges = 0;
 	}
@@ -355,6 +348,9 @@ void Application::toolChange(int selection) {
 	Serial.print(F("Application.toolChange(): Tool Change Count: "));
 	Serial.println(toolChangeCount);
 
+	//***********************************************************************************************
+	// code snippet added on 10.8.18 to help the 'C' command processing (happens after 'T' command
+	//***********************************************************************************************
 	if (selection == filamentSelection) {  // already at the correct filament selection
 		
 		if (filamentController.isFilamentLoaded() == 0) {            // no filament loaded
@@ -363,19 +359,24 @@ void Application::toolChange(int selection) {
 			idlerController.select(selection);   // move the filament selector stepper motor to the right spot
 			colorSelector.select(selection);     // move the color Selector stepper Motor to the right spot
 			filamentController.filamentLoadToMK3();
-			
-			colorSelector.disable();
-			idlerController.parkIdler();
-			filamentController.disable();
-			
+			colorSelector.deActivate();
+			idlerController.quickParkIdler();           // command moved here on 10.13.18
+			//****************************************************************************************
+			//*  added on 10.8.18 to help the 'C' command
+			//***************************************************************************************
 			repeatTCmdFlag = INACTIVE;   // used to help the 'C' command
 		} else {
 			Serial.println(F("Application.toolChange():  filament already loaded to mk3 extruder"));
-			
+			//*********************************************************************************************
+			//* added on 10.8.18 to help the 'C' Command
+			//*********************************************************************************************
 			repeatTCmdFlag = ACTIVE;     // used to help the 'C' command to not feed the filament again
 		}
 
 	}  else {                                 // different filament position
+		//********************************************************************************************
+		//* added on 19.8.18 to help the 'C' Command
+		//************************************************************************************************
 		repeatTCmdFlag = INACTIVE;              // turn off the repeat Commmand Flag (used by 'C' Command)
 		if (filamentController.isFilamentLoaded()) {
 			Serial.println(F("Application.toolChange(): filament currently loaded in selector, unloading ..."));
@@ -383,12 +384,14 @@ void Application::toolChange(int selection) {
 			filamentController.unloadFilamentToFinda();  // have to unload the filament first
 		}
 
+
 		if (trackToolChanges > TOOLSYNC) {             // reset the color selector stepper motor (gets out of alignment)
 			Serial.println(F("Application.toolChange(): syncing the Filament Selector Head"));
 			colorSelector.syncColorSelector();
 
-			colorSelector.enable();
-			colorSelector.currentPosition = 0;
+			colorSelector.activate();                  // turn the color selector motor back on
+			colorSelector.currentPosition = 0;         // reset the color selector position
+			// colorSelector('0');                    	// move selector head to position 0
 			trackToolChanges = 0;
 
 		}
@@ -396,15 +399,13 @@ void Application::toolChange(int selection) {
 		idlerController.select(selection);
 		colorSelector.select(selection);
 
-		filamentController.filamentLoadToMK3();
+		filamentController.filamentLoadToMK3();                // moves the idler and loads the filament
 
 		filamentSelection = selection;
 		currentExtruder = selection;
-
+		//quickParkIdler();                 // command moved here on 10.13.18
 		idlerController.parkIdler();
-		colorSelector.disable();
-		filamentController.disable(); 
-		
+		colorSelector.deActivate();
 	}
 }  // end of ToolChange processing
 
