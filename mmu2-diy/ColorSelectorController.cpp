@@ -28,11 +28,11 @@ void ColorSelectorController::disable() {
 	_colorSelectorMotor.disable();
 }
 
-void ColorSelectorController::select(int selection) {
+void ColorSelectorController::select(char selection) {
 
 	int findaStatus;
 
-	if ((selection < 0) || (selection > 4)) {
+	if ((selection < '0') || (selection > '4')) {
 		Serial.println(F("select():  Error, invalid filament selection"));
 		return;
 	}
@@ -53,14 +53,14 @@ loop:
 		currentPosition = selectorAbsPos[0];
 	}else{
 		// here we have to subtract the ASCII id/number from the char and then cast it to an int to get the correct numeric value
-	
+		int intSelection = (int) selection - 0x30;
 
-		if (currentPosition <= selectorAbsPos[selection]) {
-			csTurnAmount((selectorAbsPos[selection] - currentPosition), CW);
+		if (currentPosition <= selectorAbsPos[intSelection]) {
+			csTurnAmount((selectorAbsPos[intSelection] - currentPosition), CW);
 		} else {
-			csTurnAmount((currentPosition - selectorAbsPos[selection]), CCW);
+			csTurnAmount((currentPosition - selectorAbsPos[intSelection]), CCW);
 		}
-		currentPosition = selectorAbsPos[selection];
+		currentPosition = selectorAbsPos[intSelection];
 	}	
 }  
 

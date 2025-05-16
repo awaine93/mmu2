@@ -68,7 +68,6 @@ extern int command;
 
 #define IDLERSTEPSIZE 25 //original:23    // steps to each roller bearing  
 // float bearingAbsPos[5] = {1, 24, 48, 72, 96}; // absolute position of roller bearing stepper motor
-extern float bearingAbsPos[5];
 
 #define CSSTEPS 355 // original: 357                                            
 
