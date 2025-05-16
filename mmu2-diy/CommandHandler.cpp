@@ -105,7 +105,7 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 		c2 = inputLine[index++]; 
 		c3 = inputLine[index++];
 		
-		int c2Int = static_cast<int>(c2) - '0';
+		//int c2Int = static_cast<int>(c2) - '0';
 
 		// process commands coming from the mk3 controller : Extract this to a method so that 
 		// both USB and Serial printer can run the commands
@@ -126,10 +126,10 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 			
 			// Request for idler and selector based on filament number
 			Serial.print(F("T: filamentSelection = "));
-			Serial.println(c2Int);
+			Serial.println(c2);
 
-			if (c2Int >= 0 && c2Int <= 4) {
-				application.toolChange(c2Int);
+			if (c2 >= '0' && c2 <= '4') {
+				application.toolChange(c2);
 			} else {
 				Serial.println(F("T: Invalid filament Selection"));
 			}
@@ -171,7 +171,7 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 				idlerController.unParkIdler();                    // turn on the idler motor
 			}
 
-			if ((c2Int >= 0) && (c2Int <= 4)) {
+			if ((c2 >= '0') && (c2 <= '4')) {
 
 				filamentController.unloadFilamentToFinda();
 				idlerController.parkIdler();
@@ -205,9 +205,9 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 				colorSelector.enable();         
 			}
 
-			if ((c2Int >= 0) && (c2Int <= 4)) {
-				idlerController.select(c2Int);   
-				colorSelector.select(c2Int); 
+			if ((c2 >= '0') && (c2 <= '4')) {
+				idlerController.select(c2);   
+				colorSelector.select(c2); 
 
 				filamentController.loadFilamentToFinda();
 				
