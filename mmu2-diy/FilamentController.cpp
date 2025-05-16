@@ -22,21 +22,16 @@ int filStatus = INACTIVE;
 
 
 
-FilamentController::FilamentController (){
+FilamentController::FilamentController () : _filamentMotor((uint8_t)extruderEnablePin, (uint8_t)extruderDirPin, (uint8_t)extruderStepPin){
     // Do Nothing 
 }
 
-void FilamentController::activate() {
-	digitalWrite(extruderEnablePin, ENABLE);
-	delay(1);
-	filStatus = ACTIVE;
+void FilamentController::enable() {
+	_filamentMotor.enable();
 }
 
-void FilamentController::deActivate() {
-
-	digitalWrite(extruderEnablePin, DISABLE);    // turn off the color selector stepper motor  (nice to do, cuts down on CURRENT utilization)
-	delay(1);
-	filStatus = INACTIVE;
+void FilamentController::disable() {
+	_filamentMotor.disable();
 }
 
 // part of the 'C' command,  does the last little bit to load into the past the extruder gear
@@ -52,7 +47,6 @@ void FilamentController::filamentLoadWithBondTechGear() {
 
 	//*****************************************************************************************************************
 	//*  added this code snippet to not process a 'C' command that is essentially a repeat command
-
 
 	if (application.repeatTCmdFlag == ACTIVE) {
 		Serial.println(F("filamentLoadWithBondTechGear(): filament already loaded and 'C' command already processed"));
@@ -73,33 +67,25 @@ void FilamentController::filamentLoadWithBondTechGear() {
 
 
 	//*************************************************************************************************
-	//* change of approach to speed up the IDLER engagement 10.7.18
+	//*  change of approach to speed up the IDLER engagement 10.7.18
 	//*  WARNING: THIS APPROACH MAY NOT WORK ... NEEDS TO BE DEBUGGED
 	//*  C command assumes there is always a T command right before it
-	//*  (IF 2 'C' commands are issued by the MK3 in a row the code below might be an issue)
+	//*  (IF 2 'C' commands are issued by the MK3 in a row the code below might be an issue) -- there is a check above. can this comment be removed ? 
 	//*
 	//*************************************************************************************************
 	timeStart = millis();
-	if (idlerController.status == QUICKPARKED) {                        // make sure idler is  in the pending state (set by quickparkidler() routine)
-		// Serial.println(F("'C' Command: quickUnParking the Idler"));
-		// quickunParkIdler();
-#ifdef NOTDEF
-		Serial.println(F("filamentLoadWithBondTechGear()  calling specialunparkidler() routine"));
-#endif
-		idlerController.specialunParkIdler();                                // PLACEHOLDER attempt to speed up the idler engagement a little more 10.13.18
+	if (idlerController.status == QUICKPARKED) {  
+		Serial.println(F("filamentLoadWithBondTechGear(): idlerController.status == QUICKPARKED"));         
+		idlerController.quickunParkIdler();
+		// what is the best unpark method to use here?
+		//idlerController.specialunParkIdler();                                // PLACEHOLDER attempt to speed up the idler engagement a little more 10.13.18
 	}
 	if (idlerController.status == INACTIVE) {
+		Serial.println(F("filamentLoadWithBondTechGear(): idlerController.status == INACTIVE"));
+		enable();
+		delay(1);
 		idlerController.unParkIdler();
 	}
-
-#ifdef NOTDEF
-	else {
-		Serial.println(F("filamentLoadWithBondTechGear(): looks like I received two 'C' commands in a row"));
-		Serial.println(F("                                ignoring the 2nd 'C' command"));
-		return;
-	}
-#endif
-
 
 	timeEnd = millis();
 	timeUnparking = timeEnd - timeStart;
@@ -111,11 +97,10 @@ void FilamentController::filamentLoadWithBondTechGear() {
 
 	stepCount = 0;
 	application.time0 = millis();
-	//digitalWrite(greenLED, HIGH);                   // turn on the green LED (for debug purposes)
 
 	//*******************************************************************************************
 	// feed the filament from the MMU2 into the bondtech gear for 2 seconds at 10 mm/sec
-	// STEPPERMM : 144, 1: duration in seconds,  21: feed rate (in mm/sec)
+	// (STEPPERMM * STEPSIZE): 144, 1: duration in seconds,  21: feed rate (in mm/sec)
 	// delay: 674 (for 10 mm/sec)
 	// delay: 350 (for 21 mm/sec)
 	// LOAD_DURATION:  1 second (time to spend with the mmu2 extruder active)
@@ -131,8 +116,6 @@ void FilamentController::filamentLoadWithBondTechGear() {
 	//********************************************************************************************
 	// delayFactor = ((LOAD_DURATION * 1000.0) / (LOAD_SPEED * STEPSPERMM)) - INSTRUCTION_DELAY;   // compute the delay factor (in microseconds)
 
-	// for (i = 0; i < (STEPSPERMM * 1 * 21); i++) {
-
 	tSteps =   STEPSPERMM * ((float)LOAD_DURATION / 1000.0) * LOAD_SPEED;             // compute the number of steps to take for the given load duration
 	delayFactor = (float(LOAD_DURATION * 1000.0) / tSteps) - INSTRUCTION_DELAY;            // 2nd attempt at delayFactor algorithm
 
@@ -141,47 +124,9 @@ void FilamentController::filamentLoadWithBondTechGear() {
 	Serial.println(tSteps);
 #endif
 
-	for (i = 0; i < tSteps; i++) {
-		digitalWrite(extruderStepPin, HIGH);  // step the extruder stepper in the MMU2 unit
-		delayMicroseconds(PINHIGH);
-		digitalWrite(extruderStepPin, LOW);
-		//*****************************************************************************************************
-		// replace '350' with delayFactor once testing of variable is complete
-		//*****************************************************************************************************
-		// after further testing, the '350' can be replaced by delayFactor
-		delayMicroseconds(delayFactor);             // this was calculated in order to arrive at a 10mm/sec feed rate
-		++stepCount;
-	}
-	digitalWrite(greenLED, LOW);                      // turn off the green LED (for debug purposes)
+	_filamentMotor.step(tSteps, delayFactor);
 
 	application.time1 = millis();
-
-
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// copied from the MM-control-01/blob/master/motion.cpp routine
-	// NO LONGER USED (abandoned in place on 10.7.18) ... came up with a better algorithm (see above)
-	//
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//***********************************************************************************************************
-	//* THIS CODE WORKS BUT IT LEADS TO SOME GRINDING AT THE MMU2 WHILE THE BONDTECH GEAR IS LOADING THE FILAMENT
-	//***********************************************************************************************************
-#ifdef NOTDEF
-	for (i = 0; i <= 320; i++) {
-		digitalWrite(extruderStepPin, HIGH);
-		delayMicroseconds(PINHIGH);               // delay for 10 useconds
-		digitalWrite(extruderStepPin, LOW);
-		//delayMicroseconds(2600);             // originally 2600
-		delayMicroseconds(800);              // speed up by a factor of 3
-
-	}
-	for (i = 0; i <= 450; i++) {
-		digitalWrite(extruderStepPin, HIGH);
-		delayMicroseconds(PINHIGH);               // delay for 10 useconds
-		digitalWrite(extruderStepPin, LOW);
-		// delayMicroseconds(2200);            // originally 2200
-		delayMicroseconds(800);             // speed up by a factor of 3
-	}
-#endif
 
 #ifdef DEBUG
 	Serial.println(F("C Command: parking the idler"));
@@ -189,17 +134,15 @@ void FilamentController::filamentLoadWithBondTechGear() {
 	//***************************************************************************************************************************
 	//*  this disengags the idler pulley after the 'C' command has been exectuted
 	//***************************************************************************************************************************
-	// quickParkIdler();                           // changed to quickparkidler on 10.12.18 (speed things up a bit)
-
-	idlerController.specialParkIdler();                         // PLACEHOLDER (experiment attempted on 10.13.18)
-
-	//parkIdler();                               // turn OFF the idler rollers when filament is loaded
+	idlerController.quickParkIdler();                           // changed to quickparkidler on 10.12.18 (speed things up a bit)
+	//idlerController.specialParkIdler();                         // PLACEHOLDER (experiment attempted on 10.13.18)
 
 	timeCEnd = millis();
 	//*********************************************************************************************
 	//* going back to the fundamental approach with the idler
 	//*********************************************************************************************
-	idlerController.parkIdler();                               // cleanest way to deal with the idler
+	//idlerController.parkIdler();                               // cleanest way to deal with the idler
+	_filamentMotor.disable(); // turn off the extruder stepper motor as well
 
 	printFilamentStats();   // print current Filament Stats
 
@@ -259,8 +202,8 @@ void FilamentController::unloadFilamentToFinda() {
 		return;
 	}
 
-	digitalWrite(extruderEnablePin, ENABLE);  // turn on the extruder motor
-	digitalWrite(extruderDirPin, CW);  // set the direction of the MMU2 extruder motor
+	_filamentMotor.enable(); // turn on the extruder motor
+	_filamentMotor.setDirection(CW);
 	delay(1);
 
 	startTime = millis();
@@ -292,22 +235,11 @@ loop:
 		goto loop;
 	}
 
-
-#ifdef NOTDEF
-	Serial.println(F("unloadFilamenttoFinda(): Pinda Sensor Triggered during Filament unload"));
-#endif
-	//
 	// for a filament unload ... need to get the filament out of the selector head !!!
-	//
 	Serial.println(F("unloadFilamenttoFinda(): filament unloaded past finda sensor"));
-	//digitalWrite(extruderDirPin, CW);   // back the filament away from the selector
+	//_filamentMotor.setDirection(CW); // back the filament away from the selector
     feedFilament(STEPSPERMM * 23);     // back the filament away from the selector by 23mm
 
-#ifdef NOTDEF
-	Serial.println(F("unloadFilamentToFinda(): Unloading Filament Complete ..."));
-#endif
-
-	// digitalWrite(ledPin, LOW);     // turn off LED
 }
 
 int FilamentController::isFilamentLoaded() {
@@ -333,45 +265,26 @@ int FilamentController::isFilamentLoaded() {
 //  144 steps = 1mm of filament (using the current mk8 gears in the MMU2)
 //
 void FilamentController::feedFilament(unsigned int steps) {
-
-	int i;
-
-#ifdef NOTDEF
-	if (steps > 1) {
-		Serial.print(F("Steps: "));
-		Serial.println(steps);
-	}
-#endif
-
-	for (i = 0; i <= steps; i++) {
-		digitalWrite(extruderStepPin, HIGH);
-		delayMicroseconds(PINHIGH);               // delay for 10 useconds
-		digitalWrite(extruderStepPin, LOW);
-		delayMicroseconds(PINLOW);               // delay for 10 useconds
-
-		delayMicroseconds(EXTRUDERMOTORDELAY);         // wait for 400 useconds
-	}
+	_filamentMotor.step(steps, EXTRUDERMOTORDELAY);
 }
 
 void FilamentController::loadFilament(int direction) {
 	int findaStatus;
 	unsigned int steps;
 
-	// digitalWrite(ledPin, HIGH);          // turn on LED to indicate extruder motor is running
-	digitalWrite(extruderDirPin, direction);  // set the direction of the MMU2 extruder motor
-
+	_filamentMotor.setDirection(direction);  // set the direction of the MMU2 extruder motor
 
 	switch (direction) {
 	case CCW:                     // load filament
 loop:
-		feedFilament(1);        // 1 step and then check the pinda status
+		feedFilament(STEPSPERMM);        // 1 mm and then check the pinda status
 
 		findaStatus = isFilamentLoaded();
 		if (findaStatus == 1)              // keep feeding the filament until the pinda sensor triggers
 			goto loop;
 		Serial.println(F("Pinda Sensor Triggered"));
-		// now feed the filament ALL the way to the printer extruder assembly
 
+		// now feed the filament ALL the way to the printer extruder assembly
 		steps = 17 * 200 * STEPSIZE;
 
 		Serial.print(F("steps: "));
@@ -390,12 +303,9 @@ loop1:
 
 		feedFilament(STEPSPERMM * 23);      // move 23mm so we are out of the way of the selector
 
-
 		break;
 	default:
 		Serial.println(F("loadFilament:  I shouldn't be here !!!!"));
-
-
 	}
 }
 
@@ -414,18 +324,13 @@ void FilamentController::filamentLoadToMK3() {
 		Serial.println(F("filamentLoadToMK3(): fixing current extruder variable"));
 		application.currentExtruder = 0;
 	}
-#ifdef DEBUG
-	Serial.println(F("Attempting to move Filament to Print Head Extruder Bondtech Gears"));
-	//idlerController.nParkIdler();
-	Serial.print(F("filamentLoadToMK3():  application.currentExtruder: "));
-	Serial.println(application.currentExtruder);
-#endif 
+
 
 	idlerController.select(application.currentExtruder); // active the idler before the filament load
-	colorSelector.deActivate();
+	colorSelector.disable();
 
-	digitalWrite(extruderEnablePin, ENABLE); // turn on the extruder stepper motor (10.14.18)
-	digitalWrite(extruderDirPin, CCW);      // set extruder stepper motor to push filament towards the mk3
+	_filamentMotor.enable(); 				// turn on the extruder stepper motor (10.14.18)
+	_filamentMotor.setDirection(CCW);     	// set extruder stepper motor to push filament towards the mk3
 	delay(1);                               // wait 1 millisecond
 
 	startTime = millis();
@@ -566,8 +471,8 @@ loop1:
 	//#############################################################################################################################
 	//# NEWEXPERIMENT:  removed the parkIdler() command on 10.5.18 to improve timing between 'T' command followng by 'C' command
 	//#############################################################################################################################
-	 idlerController.parkIdler();              // park the IDLER (bearing) motor
-
+	idlerController.parkIdler();              // park the IDLER (bearing) motor
+	disable();
 	//delay(200);             // removed on 10.5.18
 	//Serial1.print(F("ok\n"));    // send back acknowledge to the mk3 controller (removed on 10.5.18)
 
@@ -580,8 +485,8 @@ void FilamentController::loadFilamentToFinda() {
 	unsigned int steps;
 	unsigned long startTime, currentTime;
 
-	digitalWrite(extruderEnablePin, ENABLE);
-	digitalWrite(extruderDirPin, CCW);  // set the direction of the MMU2 extruder motor
+	_filamentMotor.enable();
+	_filamentMotor.setDirection(CCW); // set the direction of the MMU2 extruder motor
 	delay(1);
 
 	startTime = millis();
@@ -604,7 +509,7 @@ loop:
 	//
 	// for a filament load ... need to get the filament out of the selector head !!!
 	//
-	digitalWrite(extruderDirPin, CW);   // back the filament away from the selector
+	_filamentMotor.setDirection(CW); // back the filament away from the selector
 
 	feedFilament(STEPSPERMM * 23);      // after hitting the FINDA sensor, back away by 23 mm
 
@@ -667,6 +572,5 @@ void FilamentController::printFilamentStats() {
 	Serial.print(f4Distance);
 	Serial.print(F("  F4 count: "));
 	Serial.println(f4ToolChange);
-
 }
 
