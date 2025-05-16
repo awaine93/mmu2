@@ -15,17 +15,22 @@ int csStatus = INACTIVE;
 int currentPosition = 0;
 int selectorAbsPos[5] = {0, CSSTEPS * 1, CSSTEPS * 2, CSSTEPS * 3, CSSTEPS * 4}; // absolute position of selector stepper motor
 
-ColorSelectorController::ColorSelectorController (): _colorSelectorMotor((uint8_t)colorSelectorEnablePin, (uint8_t)colorSelectorDirPin, (uint8_t)colorSelectorStepPin)
-{
+
+ColorSelectorController::ColorSelectorController (){
         // Do Nothing 
 }
 
-void ColorSelectorController::enable() {
-	_colorSelectorMotor.enable();
+void ColorSelectorController::activate() {
+	digitalWrite(colorSelectorEnablePin, ENABLE);
+	delay(1);
+	csStatus = ACTIVE;
 }
 
-void ColorSelectorController::disable() {
-	_colorSelectorMotor.disable();
+void ColorSelectorController::deActivate() {
+
+	digitalWrite(colorSelectorEnablePin, DISABLE);    // turn off the color selector stepper motor  (nice to do, cuts down on CURRENT utilization)
+	delay(1);
+	csStatus = INACTIVE;
 }
 
 void ColorSelectorController::select(int selection) {
@@ -65,38 +70,57 @@ loop:
 }  
 
 
+// this is the selector motor with the lead screw (final stage of the MMU2 unit)
+
 void ColorSelectorController::csTurnAmount(int steps, int direction) {
 	int i;
 
-	_colorSelectorMotor.enable();
+	digitalWrite(colorSelectorEnablePin, ENABLE );    // turn on the color selector motor
+	// delayMicroseconds(1500);                                       // wait for 1.5 milliseconds          added on 10.4.18
 
-	if (direction == CW){
-		_colorSelectorMotor.setDirection(LOW);
-	} else{
-		_colorSelectorMotor.setDirection(HIGH);
+	if (direction == CW)
+		digitalWrite(colorSelectorDirPin, LOW);      // set the direction for the Color Extruder Stepper Motor
+	else
+		digitalWrite(colorSelectorDirPin, HIGH);
+	// wait 1 milliseconds
+	delayMicroseconds(1500);                      // changed from 500 to 1000 microseconds on 10.6.18, changed to 1500 on 10.7.18)
+
+
+	for (i = 0; i <= (steps * STEPSIZE); i++) {                      // fixed this to '<=' from '<' on 10.5.18
+		digitalWrite(colorSelectorStepPin, HIGH);
+		delayMicroseconds(PINHIGH);               // delay for 10 useconds
+		digitalWrite(colorSelectorStepPin, LOW);
+		delayMicroseconds(PINLOW);               // delay for 10 useconds  (added back in on 10.8.2018)
+		delayMicroseconds(COLORSELECTORMOTORDELAY);         // wait for 400 useconds
+
 	}
 
-	delayMicroseconds(1500);                
+#ifdef TURNOFFSELECTORMOTOR                         // added on 10.14.18
+	digitalWrite(colorSelectorEnablePin, DISABLE);    // turn off the color selector motor
+#endif
 
-	_colorSelectorMotor.step(steps, COLORSELECTORMOTORDELAY);
 }
 
 // perform this function only at power up/reset
 //
 void ColorSelectorController::initColorSelector() {
-	
-	_colorSelectorMotor.enable();
+	digitalWrite(colorSelectorEnablePin, ENABLE);   // turn on the stepper motor
+	delay(1);                                       // wait for 1 millisecond
+
 	csTurnAmount(MAXSELECTOR_STEPS, CW);             // move to the right
 	csTurnAmount(MAXSELECTOR_STEPS+20, CCW);        // move all the way to the left
-	_colorSelectorMotor.disable();
+
+	digitalWrite(colorSelectorEnablePin, DISABLE);   // turn off the stepper motor
 
 }
 
-// This function is performed by the 'T' command after so many moves to make sure the colorselector is synchronized
+// this function is performed by the 'T' command after so many moves to make sure the colorselector is synchronized
+//
 void ColorSelectorController::syncColorSelector() {
 	int moveSteps;
 
-	_colorSelectorMotor.enable();
+	digitalWrite(colorSelectorEnablePin, ENABLE);   // turn on the selector stepper motor
+	delay(1);                                       // wait for 1 millecond
 
 	Serial.print(F("syncColorSelelector()   current Filament selection: "));
 	Serial.println(application.filamentSelection);
@@ -108,6 +132,9 @@ void ColorSelectorController::syncColorSelector() {
 	csTurnAmount(moveSteps, CW);                    // move all the way to the right
 	csTurnAmount(MAXSELECTOR_STEPS+20, CCW);        // move all the way to the left
 
+#ifdef TURNOFFSELECTORMOTOR                        // added on 10.14.18
+	digitalWrite(colorSelectorEnablePin, DISABLE);   // turn off the selector stepper motor
+#endif
 }
 
 
