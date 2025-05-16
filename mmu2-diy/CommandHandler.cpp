@@ -40,6 +40,18 @@ void CommandHandler::keyboardCommands(){
 			printKeyboardCommandList();
 			printPrinterCommandList();
 			break;
+		case 'I':
+
+			if (idlerController.status == QUICKPARKED) {
+				idlerController.quickunParkIdler();             // un-park the idler from a quick park
+			}
+			if (idlerController.status == INACTIVE) {
+				idlerController.unParkIdler();                    // turn on the idler motor
+			}
+
+			idlerController.select(inputCommand[1]);
+			idlerController.disable();
+			break;
 		case 'P':
 			Serial.println(F("Processing 'P' Command : Filament Status"));
 			Serial.println(filamentController.isFilamentLoaded());
@@ -268,7 +280,7 @@ int CommandHandler::handlePrinterCommand(String inputLine, int index){
 			printMotorStatus();
 			break;
 		default:
-			Serial.print(F("ERROR: unrecognized command from the MK3 controller"));
+			Serial.println(F("ERROR: unrecognized command from the MK3 controller"));
 			Serial1.print(F("ok\n"));
 		}  // end of switch statement
 	return index;
@@ -296,6 +308,7 @@ void CommandHandler::printKeyboardCommandList(){
 	Serial.println(F("Serial Commands:"));
 	Serial.println(F("C    : "));
 	Serial.println(F("H    : Help / CMD menu : Dsplays this command list"));
+	Serial.println(F("I<x> : Moves the Idler to the given filament"));
 	Serial.println(F("P    : Filament Status : Returns 1 if filament is loaded and 0 if not loaded"));
 	Serial.println(F("Q    : Disable Motors  : Disables all Setpper motors"));
 	Serial.println(F("T<x> : Change tool     : Changes the colour selector to the given filament and then loads it into the MMU"));

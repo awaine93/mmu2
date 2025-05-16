@@ -16,7 +16,7 @@ public:
     void unParkIdler();
     void parkIdler();
     void quickParkIdler();
-    void select(int filament);
+    void select(char filament);
     void turnamount(int steps, int dir);
     void enable();
     void disable();

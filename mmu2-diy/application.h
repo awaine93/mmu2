@@ -13,7 +13,7 @@ public:
 	void loop();
 	void disableAllMotors();
 	void fixTheProblem(String);
-	void toolChange(int);
+	void toolChange(char);
 	void checkSerialInterface();
 
 	// Variables 

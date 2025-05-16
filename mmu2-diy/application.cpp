@@ -68,8 +68,6 @@ boolean newData = false;
 
 // Global variables
 int command = 0;
-float bearingAbsPos[5] = {0, IDLERSTEPSIZE, IDLERSTEPSIZE * 2, IDLERSTEPSIZE * 3, IDLERSTEPSIZE * 4};
-
 
 //SoftwareSerial Serial1(10,11); // RX, TX (communicates with the MK3 controller board
 
@@ -295,7 +293,7 @@ void processKeyboardInput() {
 			colorSelector._colorSelectorMotor.enable();         // turn on the color selector motor
 		}
 
-		idlerController.select((int)receivedChar);   // move the filament selector stepper motor to the right spot
+		idlerController.select(receivedChar);   // move the filament selector stepper motor to the right spot
 		colorSelector.select(receivedChar);     // move the color Selector stepper Motor to the right spot
 
 		break;
@@ -340,7 +338,9 @@ void processKeyboardInput() {
 //
 // (T) Tool Change Command - this command is the core command used my the mk3 to drive the mmu2 filament selection
 //
-void Application::toolChange(int selection) {
+void Application::toolChange(char selection) {
+	int newExtruder;
+
 	Serial.print(F("Application.toolChange(): filament selected: "));
 	Serial.println(selection);
 
@@ -355,7 +355,9 @@ void Application::toolChange(int selection) {
 	Serial.print(F("Application.toolChange(): Tool Change Count: "));
 	Serial.println(toolChangeCount);
 
-	if (selection == filamentSelection) {  // already at the correct filament selection
+	newExtruder = selection - 0x30;                // convert ASCII to a number (0-4)
+
+	if (newExtruder == filamentSelection) {  // already at the correct filament selection
 		
 		if (filamentController.isFilamentLoaded() == 0) {            // no filament loaded
 			Serial.println(F("Application.toolChange(): filament not currently loaded, loading ..."));
@@ -398,7 +400,7 @@ void Application::toolChange(int selection) {
 
 		filamentController.filamentLoadToMK3();
 
-		filamentSelection = selection;
+		filamentSelection = newExtruder;
 		currentExtruder = selection;
 
 		idlerController.parkIdler();

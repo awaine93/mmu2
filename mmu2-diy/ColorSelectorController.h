@@ -11,7 +11,7 @@ public:
 	ColorSelectorController();
     void enable();
     void disable();
-    void select(int selection);
+    void select(char selection);
     void csTurnAmount(int steps, int direction);
     void initColorSelector();
     
